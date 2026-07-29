@@ -11,4 +11,6 @@ kotlinx.serialization, JUnit.
 ## Docs
 - [PRD](docs/PRD.md) — scope, data model, architecture.
 - [Feature docs](docs/features/README.md) — F01–F07 specs and implementation plans.
+- [Changelog](CHANGELOG.md) — notable changes, Keep a Changelog format.
+- [Release process](RELEASE.md) — how to cut a version.
 
