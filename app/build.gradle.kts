@@ -17,8 +17,8 @@ android {
         applicationId = "com.chm.flashcards"
         minSdk = 30
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = providers.gradleProperty("VERSION_CODE").get().toInt()
+        versionName = providers.gradleProperty("VERSION_NAME").get()
 
         testInstrumentationRunner = "com.chm.flashcards.HiltTestRunner"
     }
