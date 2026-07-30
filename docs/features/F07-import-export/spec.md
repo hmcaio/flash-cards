@@ -90,3 +90,5 @@ needed at personal-app data volumes.
 - [ ] "Replace all" import clears existing data first.
 - [ ] Malformed/oversized/invalid-content JSON is rejected with a clear
       error and zero DB writes.
+- [ ] `ImportExportScreen` has `@Preview`s per the project's Compose preview
+      convention.

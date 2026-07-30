@@ -25,3 +25,13 @@ Each task is Red → Green → Refactor:
 Room DAOs are declarative (no method body to write), so "Red" for a DAO test
 means the entity/DAO doesn't exist yet or the `@Query` is wrong — the test
 won't compile or will assert wrong data until the annotation is correct.
+
+## Compose preview convention
+Every new screen and reusable component gets an `@Preview`, added as part of
+that feature's own Refactor step (not a separate pass). A screen composable
+backed by `hiltViewModel()` is split into a public stateful entry point and a
+private stateless overload that takes `UiState` + plain lambdas — the
+stateless one is what gets previewed, since `hiltViewModel()` can't resolve
+outside a running app. See `ui/setlist/SetListScreen.kt` (F02) for the
+pattern: one `@Preview` per meaningful state (empty/populated, with/without
+error), plus one for each extracted sub-component (row, dialogs).

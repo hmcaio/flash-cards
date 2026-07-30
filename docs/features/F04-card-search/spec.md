@@ -66,3 +66,4 @@ debouncing would be premature optimization.
 - [ ] Selecting a tag chip filters to cards with that tag; combined with
       text search narrows further.
 - [ ] Clearing search text and deselecting the tag chip restores the full list.
+- [ ] `SetDetailScreen`'s `@Preview`s (from F03) cover the search/tag-filter states.

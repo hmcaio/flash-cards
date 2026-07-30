@@ -8,14 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Room data layer: `CardSet`, `Card`, `Tag`, `CardTagCrossRef`,
-  `PracticeSession`, and `PracticeSessionResult` entities, their DAOs, and
-  `FlashCardsDatabase`.
-- `IdGenerator` / `TimeProvider` abstractions (Hilt-injected) as the sole
-  source of UUIDs and timestamps in the data layer.
-- Hilt DI setup (`FlashCardsApplication`, `DatabaseModule`, `UtilModule`).
-- Navigation Compose scaffold (`Screen` routes, nav host) with placeholder
-  destinations for every screen in the PRD.
-- Release build config with R8 minification and resource shrinking enabled.
+- Data layer & app shell (F01): Room entities/DAOs for card sets, cards,
+  tags, and practice sessions (`kotlin.uuid.Uuid` ids via a Room
+  `TypeConverter`), Hilt DI, `IdGenerator`/`TimeProvider` abstractions, and a
+  Navigation Compose scaffold with placeholder screens for every route.
+- Card set management (F02): create, rename, and delete card sets from a new
+  Set List screen, backed by `CardSetRepository` and `CardSetDao.getAllWithCardCount()`
+  (live card counts, deletion cascades to a set's cards).
 
 [Unreleased]: https://github.com/hmcaio/flash-cards/commits/main

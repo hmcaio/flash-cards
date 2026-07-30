@@ -46,6 +46,10 @@ Files: `test/.../ui/setdetail/SetDetailViewModelTest.kt` (extend).
 ## 5. Refactor
 23. REFACTOR — Confirm no duplicate front/back/notes-matching logic exists outside
     the DAO query; all F01–F04 tests green.
+24. REFACTOR — Update `SetDetailScreen`'s existing `@Preview`s (from F03) to
+    cover the added search bar and tag-filter-chip row (query typed,
+    tag selected, no-results state), per the project's Compose preview
+    convention (`docs/features/README.md`).
 
 ## Definition of done
 `./gradlew test connectedAndroidTest` green; manually search a set with

@@ -2,6 +2,7 @@ package com.chm.flashcards.data.dao
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
+import com.chm.flashcards.data.entity.CardEntity
 import com.chm.flashcards.data.entity.CardSetEntity
 import java.time.Instant
 import kotlin.uuid.Uuid
@@ -16,10 +17,12 @@ import org.junit.runner.RunWith
 class CardSetDaoTest : BaseRoomDaoTest() {
 
     private lateinit var cardSetDao: CardSetDao
+    private lateinit var cardDao: CardDao
 
     @Before
     fun setUpDao() {
         cardSetDao = database.cardSetDao()
+        cardDao = database.cardDao()
     }
 
     @Test
@@ -65,5 +68,45 @@ class CardSetDaoTest : BaseRoomDaoTest() {
         cardSetDao.delete(set)
 
         assertNull(cardSetDao.getById(set.id))
+    }
+
+    @Test
+    fun getAllWithCardCount_reflectsZeroAndNonZeroCounts() = runTest {
+        val set = CardSetEntity(
+            id = Uuid.random(),
+            name = "Kotlin Basics",
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        cardSetDao.insert(set)
+
+        cardSetDao.getAllWithCardCount().test {
+            val zeroCountItem = awaitItem().single()
+            assertEquals(set.id, zeroCountItem.id)
+            assertEquals(set.name, zeroCountItem.name)
+            assertEquals(set.createdAt, zeroCountItem.createdAt)
+            assertEquals(0, zeroCountItem.cardCount)
+
+            cardDao.insert(
+                CardEntity(
+                    id = Uuid.random(),
+                    setId = set.id,
+                    front = "Front 1",
+                    back = "Back 1",
+                    notes = null,
+                ),
+            )
+            assertEquals(1, awaitItem().single().cardCount)
+
+            cardDao.insert(
+                CardEntity(
+                    id = Uuid.random(),
+                    setId = set.id,
+                    front = "Front 2",
+                    back = "Back 2",
+                    notes = null,
+                ),
+            )
+            assertEquals(2, awaitItem().single().cardCount)
+        }
     }
 }

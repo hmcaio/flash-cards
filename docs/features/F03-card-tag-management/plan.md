@@ -75,6 +75,11 @@ Files: `test/.../ui/setdetail/SetDetailViewModelTest.kt`.
 ## 7. Refactor
 41. REFACTOR — Extract tag-chip-input composable if reused elsewhere later;
     confirm F01–F03 tests all green.
+42. REFACTOR — Add `@Preview`s per the project's Compose preview convention
+    (`docs/features/README.md`) for `CardEditorScreen` (create mode, edit
+    mode, validation-error state) and `SetDetailScreen` (empty/populated
+    card list with tag chips), splitting each into a stateless overload
+    first if not already done (see F02's `SetListScreen.kt` for the pattern).
 
 ## Definition of done
 `./gradlew test connectedAndroidTest` green; manually add a card with tags,

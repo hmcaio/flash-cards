@@ -98,3 +98,5 @@ everywhere below that point, same as F05/F06's session/history nav args.
 - [ ] Typing an existing tag name reuses it (verified: tag count in DB
       doesn't grow on reuse); typing a new name creates it.
 - [ ] Tag chips render on the Set Detail card list.
+- [ ] `CardEditorScreen` and `SetDetailScreen` have `@Preview`s per the
+      project's Compose preview convention.

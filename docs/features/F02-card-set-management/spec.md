@@ -69,3 +69,5 @@ Actions: `onCreateClick()`, `onCreateNameChange`, `onCreateConfirm()`,
 - [ ] Deleting a set removes its cards (verified via F01 cascade, exercised
       here through the repository).
 - [ ] Empty state shown when no sets exist.
+- [ ] `SetListScreen` and its extracted components (row, dialogs) have
+      `@Preview`s per the project's Compose preview convention.

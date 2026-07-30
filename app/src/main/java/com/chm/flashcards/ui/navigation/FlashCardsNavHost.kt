@@ -9,6 +9,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.chm.flashcards.ui.setlist.SetListScreen
+import kotlin.uuid.Uuid
 
 /**
  * App-wide nav graph. Every destination is a placeholder until its owning
@@ -22,7 +24,11 @@ fun FlashCardsNavHost(
 ) {
     NavHost(navController = navController, startDestination = Screen.SetList.route, modifier = modifier) {
         composable(Screen.SetList.route) {
-            Text("TODO: SetList")
+            SetListScreen(
+                onSetClick = { setId: Uuid ->
+                    navController.navigate(Screen.SetDetail.createRoute(setId.toString()))
+                },
+            )
         }
         composable(
             route = Screen.SetDetail.route,
