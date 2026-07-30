@@ -61,3 +61,5 @@ not need special-case UI for this; the query simply returns fewer rows.
       as the original Session Results screen.
 - [ ] History List empty state ("No sessions yet") when a set has never
       been practiced.
+- [ ] `HistoryListScreen`, `HistoryDetailScreen`, and `SessionOutcomeView`
+      have `@Preview`s per the project's Compose preview convention.

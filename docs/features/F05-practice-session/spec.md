@@ -100,3 +100,5 @@ singleton just to pass this list).
 - [ ] Finishing a session persists exactly one `PracticeSession` +
       N `PracticeSessionResult` rows and updates each touched card's stats.
 - [ ] Backing out mid-session persists nothing.
+- [ ] `SessionConfigScreen`, `SessionPlayScreen`, and `SessionResultsScreen`
+      have `@Preview`s per the project's Compose preview convention.

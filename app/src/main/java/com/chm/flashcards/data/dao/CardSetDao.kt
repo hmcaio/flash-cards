@@ -25,4 +25,15 @@ interface CardSetDao {
 
     @Query("SELECT * FROM card_sets")
     fun getAll(): Flow<List<CardSetEntity>>
+
+    @Query(
+        """
+        SELECT card_sets.id AS id, card_sets.name AS name, card_sets.createdAt AS createdAt,
+               COUNT(cards.id) AS cardCount
+        FROM card_sets
+        LEFT JOIN cards ON cards.setId = card_sets.id
+        GROUP BY card_sets.id
+        """,
+    )
+    fun getAllWithCardCount(): Flow<List<CardSetWithCount>>
 }

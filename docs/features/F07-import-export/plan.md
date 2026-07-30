@@ -83,6 +83,10 @@ Files: `test/.../ui/importexport/ImportExportViewModelTest.kt`.
 ## 7. Refactor
 40. REFACTOR — Confirm validation constants shared with F03 (not duplicated), all
     F01–F07 tests green.
+41. REFACTOR — Add `@Preview`s per the project's Compose preview convention
+    (`docs/features/README.md`) for `ImportExportScreen` (idle, mode-choice
+    dialog, error state), split into a stateless overload first if not
+    already done.
 
 ## Definition of done
 `./gradlew test connectedAndroidTest` green; manual export → import

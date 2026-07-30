@@ -57,6 +57,10 @@ Files: `test/.../data/repository/PracticeRepositoryTest.kt` (extend).
 ## 7. Refactor
 22. REFACTOR — Confirm `SessionResultsScreen` (F05) and `HistoryDetailScreen` share
     `SessionOutcomeView` with no duplicated layout code; all tests green.
+23. REFACTOR — Add `@Preview`s per the project's Compose preview convention
+    (`docs/features/README.md`) for `HistoryListScreen` (empty/populated),
+    `HistoryDetailScreen`, and `SessionOutcomeView` itself, splitting each
+    into a stateless overload first if not already done.
 
 ## Definition of done
 `./gradlew test connectedAndroidTest` green; manually run 2+ sessions on a

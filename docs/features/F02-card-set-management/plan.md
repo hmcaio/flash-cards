@@ -59,6 +59,12 @@ to one flow here).
 ## 5. Refactor
 25. REFACTOR — Extract shared confirm-dialog composable if rename/delete duplicate
     it; confirm all F01+F02 tests still green.
+26. REFACTOR — Split `SetListScreen` into the `hiltViewModel()`-backed entry
+    point and a private stateless overload (`SetListUiState` + plain
+    lambdas); add `@Preview`s per the project's Compose preview convention
+    (`docs/features/README.md`) — one per meaningful screen state
+    (empty/populated) plus one for each extracted component (row, name-input
+    dialog with/without error, delete-confirm dialog).
 
 ## Definition of done
 `./gradlew test connectedAndroidTest` green; manually create/rename/delete

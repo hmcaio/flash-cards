@@ -1,8 +1,12 @@
-package com.chm.flashcards
+package com.chm.flashcards.ui.setlist
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import com.chm.flashcards.MainActivity
 import com.chm.flashcards.data.dao.CardSetDao
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -14,13 +18,13 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Smoke test: launching [MainActivity] wires Hilt + Navigation Compose
- * without crashing and lands on the (now real, as of F02) Set List
- * destination, empty by default in a fresh in-memory test database
- * ([com.chm.flashcards.di.TestDatabaseModule]).
+ * F02 acceptance criterion: create a set from the UI and see it appear in
+ * the list, reactively (no manual refresh). One critical flow only, per
+ * PRD §10 "critical flows only" -- rename/delete are covered at the
+ * ViewModel unit-test level ([SetListViewModelTest]).
  */
 @HiltAndroidTest
-class MainActivityTest {
+class SetListScreenTest {
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -34,14 +38,15 @@ class MainActivityTest {
     @Before
     fun init() {
         hiltRule.inject()
-        // Belt-and-suspenders: the in-memory test DB is Hilt-singleton-scoped,
-        // so if the test process happens to be reused across test classes,
-        // this keeps this test's assumption of a clean slate valid either way.
         runBlocking { cardSetDao.getAll().first().forEach { cardSetDao.delete(it) } }
     }
 
     @Test
-    fun launch_showsSetListEmptyState() {
-        composeRule.onNodeWithText("No sets yet").assertIsDisplayed()
+    fun createSet_appearsInList() {
+        composeRule.onNodeWithTag("createSetFab").performClick()
+        composeRule.onNodeWithTag("createSetNameField").performTextInput("Kotlin Basics")
+        composeRule.onNodeWithTag("createSetConfirmButton").performClick()
+
+        composeRule.onNodeWithText("Kotlin Basics").assertIsDisplayed()
     }
 }

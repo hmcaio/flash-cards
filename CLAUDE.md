@@ -45,6 +45,8 @@ When implementing a feature, follow its `plan.md` steps in order rather than imp
 
 **DI (Hilt)**: one `@Module` per concern rather than one giant module — `di/DatabaseModule.kt` provides the Room database + DAOs, `di/UtilModule.kt` binds `IdGenerator`/`TimeProvider`. Later features add their own repository-binding modules following the same pattern rather than growing these two.
 
+**Compose previews**: every screen and reusable component gets an `@Preview` (added during that feature's own Refactor step, per [docs/features/README.md](docs/features/README.md)). Screens backed by `hiltViewModel()` split into a public stateful entry point + a private stateless overload (`UiState` + plain lambdas) so the stateless one can be previewed — see `ui/setlist/SetListScreen.kt` (F02).
+
 **Testing structure**:
 - Unit tests (`app/src/test/`) use fakes, no Android/Room dependency — fast, run on the JVM.
 - Instrumented tests (`app/src/androidTest/`) cover Room DAOs (in-memory database) and Compose screens. DAO tests extend `data/dao/BaseRoomDaoTest.kt`, which builds/tears down a fresh in-memory `FlashCardsDatabase` per test — don't duplicate that boilerplate in new DAO test classes.

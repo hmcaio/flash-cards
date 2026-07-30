@@ -88,6 +88,11 @@ Files: `test/.../data/repository/PracticeRepositoryTest.kt`.
 ## 7. Refactor
 41. REFACTOR — Confirm `WeightedCardSelector` has zero Android/Room imports (stays
     a pure/fast unit test); all F01–F05 tests green.
+42. REFACTOR — Add `@Preview`s per the project's Compose preview convention
+    (`docs/features/README.md`) for `SessionConfigScreen` (slider states),
+    `SessionPlayScreen` (front shown, flipped to back, near-end progress),
+    and `SessionResultsScreen` (mixed correct/incorrect results), each
+    split into a stateless overload first if not already done.
 
 ## Definition of done
 `./gradlew test connectedAndroidTest` green including the E2E test; manual
