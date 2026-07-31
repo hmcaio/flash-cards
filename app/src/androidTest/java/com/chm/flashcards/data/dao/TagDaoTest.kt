@@ -28,4 +28,14 @@ class TagDaoTest : BaseRoomDaoTest() {
 
         assertEquals(tag, result)
     }
+
+    @Test
+    fun getByName_caseInsensitiveMatch_returnsExistingTag() = runTest {
+        val tag = TagEntity(id = Uuid.random(), name = "Kotlin")
+        tagDao.insert(tag)
+
+        val result = tagDao.getByName("kotlin")
+
+        assertEquals(tag, result)
+    }
 }

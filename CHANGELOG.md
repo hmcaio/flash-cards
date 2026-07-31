@@ -15,5 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Card set management (F02): create, rename, and delete card sets from a new
   Set List screen, backed by `CardSetRepository` and `CardSetDao.getAllWithCardCount()`
   (live card counts, deletion cascades to a set's cards).
+- Card & tag management (F03): create, edit, and delete cards with tags
+  (case-insensitive get-or-create, autocomplete) from new Set Detail and Card
+  Editor screens, backed by `CardRepository` and `TagRepository`.
 
 [Unreleased]: https://github.com/hmcaio/flash-cards/commits/main

@@ -15,7 +15,8 @@ interface TagDao {
     @Delete
     suspend fun delete(tag: TagEntity)
 
-    @Query("SELECT * FROM tags WHERE name = :name")
+    /** Case-insensitive match (`COLLATE NOCASE`) so "Kotlin" and "kotlin" reuse the same tag. */
+    @Query("SELECT * FROM tags WHERE name = :name COLLATE NOCASE")
     suspend fun getByName(name: String): TagEntity?
 
     @Query("SELECT * FROM tags")
