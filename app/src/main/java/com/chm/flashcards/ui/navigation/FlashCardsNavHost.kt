@@ -9,18 +9,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.chm.flashcards.ui.cardeditor.CardEditorScreen
+import com.chm.flashcards.ui.setdetail.SetDetailScreen
 import com.chm.flashcards.ui.setlist.SetListScreen
 import kotlin.uuid.Uuid
 
 /**
  * App-wide nav graph. Every destination is a placeholder until its owning
- * feature (F02+) replaces it with real screen content -- this feature only
- * establishes the route scaffold and Hilt/Nav wiring.
+ * feature replaces it with real screen content -- F03 replaces `SetDetail`
+ * and `CardEditor`; the rest stay placeholders until F05+.
  */
 @Composable
 fun FlashCardsNavHost(
-    navController: NavHostController = rememberNavController(),
     modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
 ) {
     NavHost(navController = navController, startDestination = Screen.SetList.route, modifier = modifier) {
         composable(Screen.SetList.route) {
@@ -33,8 +35,16 @@ fun FlashCardsNavHost(
         composable(
             route = Screen.SetDetail.route,
             arguments = listOf(navArgument(Screen.ARG_SET_ID) { type = NavType.StringType }),
-        ) {
-            Text("TODO: SetDetail")
+        ) { backStackEntry ->
+            val setId = backStackEntry.arguments?.getString(Screen.ARG_SET_ID).orEmpty()
+            SetDetailScreen(
+                onCardClick = { cardId: Uuid? ->
+                    navController.navigate(Screen.CardEditor.createRoute(setId, cardId?.toString()))
+                },
+                onStartPracticeClick = {
+                    navController.navigate(Screen.SessionConfig.createRoute(setId))
+                },
+            )
         }
         composable(
             route = Screen.CardEditor.route,
@@ -46,7 +56,7 @@ fun FlashCardsNavHost(
                 },
             ),
         ) {
-            Text("TODO: CardEditor")
+            CardEditorScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable(
             route = Screen.SessionConfig.route,

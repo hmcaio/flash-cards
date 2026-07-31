@@ -4,6 +4,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.chm.flashcards.data.entity.CardEntity
 import com.chm.flashcards.data.entity.CardSetEntity
+import com.chm.flashcards.data.entity.CardTagCrossRef
+import com.chm.flashcards.data.entity.TagEntity
 import java.time.Instant
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.test.runTest
@@ -87,5 +89,27 @@ class CardDaoTest : BaseRoomDaoTest() {
         assertEquals(3, updated!!.timesCorrect)
         assertEquals(1, updated.timesIncorrect)
         assertEquals(practicedAt, updated.lastPracticedAt)
+    }
+
+    @Test
+    fun getCardsWithTagsBySetId_returnsCardsJoinedWithTheirTags() = runTest {
+        val set = insertSet()
+        val cardEntity = card(set.id)
+        cardDao.insert(cardEntity)
+        val tagDao = database.tagDao()
+        val crossRefDao = database.cardTagCrossRefDao()
+        val tag1 = TagEntity(id = Uuid.random(), name = "kotlin")
+        val tag2 = TagEntity(id = Uuid.random(), name = "basics")
+        tagDao.insert(tag1)
+        tagDao.insert(tag2)
+        crossRefDao.insert(CardTagCrossRef(cardId = cardEntity.id, tagId = tag1.id))
+        crossRefDao.insert(CardTagCrossRef(cardId = cardEntity.id, tagId = tag2.id))
+
+        cardDao.getCardsWithTagsBySetId(set.id).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals(cardEntity, result[0].card)
+            assertEquals(setOf(tag1, tag2), result[0].tags.toSet())
+        }
     }
 }
