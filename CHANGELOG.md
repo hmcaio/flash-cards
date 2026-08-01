@@ -18,5 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Card & tag management (F03): create, edit, and delete cards with tags
   (case-insensitive get-or-create, autocomplete) from new Set Detail and Card
   Editor screens, backed by `CardRepository` and `TagRepository`.
+- Card search (F04): search text field and single-select tag filter chip row
+  on Set Detail, filtering the card list by front/back/notes and/or tag via
+  `CardDao.searchCards`/`CardRepository.searchCards`.
 
 [Unreleased]: https://github.com/hmcaio/flash-cards/commits/main

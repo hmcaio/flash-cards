@@ -50,6 +50,9 @@ class CardRepositoryImpl @Inject constructor(
         cardDao.delete(existing)
     }
 
+    override fun searchCards(setId: Uuid, query: String, tagId: Uuid?): Flow<List<CardWithTags>> =
+        cardDao.searchCards(setId, query, tagId).map { rows -> rows.map { it.toDomain() } }
+
     /** Replaces all of [cardId]'s tag cross-refs with [tagNames], resolving each name to an existing or new tag id. */
     private suspend fun replaceTags(cardId: Uuid, tagNames: List<String>) {
         crossRefDao.deleteByCardId(cardId)

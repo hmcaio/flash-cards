@@ -22,4 +22,15 @@ interface CardRepository {
     suspend fun createCard(setId: Uuid, front: String, back: String, notes: String?, tagNames: List<String>): Card
     suspend fun updateCard(id: Uuid, front: String, back: String, notes: String?, tagNames: List<String>)
     suspend fun deleteCard(id: Uuid)
+
+    /**
+     * F04: cards in [setId] matching [query] (case-insensitive substring on
+     * front/back/notes) and, if [tagId] is non-null, restricted to cards
+     * carrying that tag. Callers decide when to use this vs.
+     * [getCardsBySetId] -- an empty query with no tag filter is the plain
+     * unfiltered list, so `SetDetailViewModel` delegates to
+     * [getCardsBySetId] in that case rather than routing an empty search
+     * through here.
+     */
+    fun searchCards(setId: Uuid, query: String, tagId: Uuid?): Flow<List<CardWithTags>>
 }

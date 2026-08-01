@@ -15,9 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,7 +45,8 @@ import kotlin.uuid.Uuid
  * (front + tag chips), tap a row -> Card Editor (edit mode), FAB -> Card
  * Editor (create mode), delete with confirm, "Start Practice" button
  * navigating to Session Config (still a placeholder until F05).
- * Search/tag-filter UI is F04's job, not this screen's.
+ * F04 adds a search text field + single-select tag filter chip row above
+ * the card list, filtering it in place.
  */
 @Composable
 fun SetDetailScreen(
@@ -68,6 +71,8 @@ fun SetDetailScreen(
         onDeleteRequest = viewModel::onDeleteRequest,
         onDeleteConfirm = viewModel::onDeleteConfirm,
         onDeleteCancel = viewModel::onDeleteCancel,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onTagFilterSelect = viewModel::onTagFilterSelect,
     )
 }
 
@@ -81,6 +86,8 @@ private fun SetDetailScreen(
     onDeleteRequest: (Uuid) -> Unit,
     onDeleteConfirm: (Uuid) -> Unit,
     onDeleteCancel: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onTagFilterSelect: (Uuid?) -> Unit,
 ) {
     Scaffold(
         floatingActionButton = {
@@ -110,9 +117,45 @@ private fun SetDetailScreen(
             ) {
                 Text("Start Practice")
             }
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = onSearchQueryChange,
+                label = { Text("Search cards") },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .testTag("searchQueryField"),
+            )
+            if (uiState.availableTagFilters.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                        .testTag("tagFilterChipRow"),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    uiState.availableTagFilters.forEach { tag ->
+                        val selected = uiState.selectedTagFilter == tag.id
+                        FilterChip(
+                            selected = selected,
+                            onClick = { onTagFilterSelect(if (selected) null else tag.id) },
+                            label = { Text(tag.name) },
+                            modifier = Modifier.testTag("tagFilterChip_${tag.id}"),
+                        )
+                    }
+                }
+            }
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.cards.isEmpty()) {
-                    Text("No cards yet", modifier = Modifier.align(Alignment.Center))
+                    val isFiltering = uiState.searchQuery.isNotBlank() || uiState.selectedTagFilter != null
+                    Text(
+                        if (isFiltering) "No matching cards" else "No cards yet",
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .testTag("emptyCardsMessage"),
+                    )
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(uiState.cards, key = { it.card.id.toString() }) { cardWithTags ->
@@ -198,29 +241,41 @@ private fun ConfirmDeleteDialog(cardFront: String, onConfirm: () -> Unit, onDism
 // Sample data only -- previews aren't real app logic, so unlike the ViewModel
 // they call Uuid.random() directly rather than going through IdGenerator.
 
-private val previewCards = listOf(
-    CardWithTags(
-        card = Card(Uuid.random(), Uuid.random(), "What is a data class?", "Auto equals/hashCode/toString/copy", null),
-        tags = listOf(Tag(Uuid.random(), "Kotlin"), Tag(Uuid.random(), "Basics")),
-    ),
-    CardWithTags(
-        card = Card(Uuid.random(), Uuid.random(), "What is Compose?", "A declarative UI toolkit", null),
-        tags = emptyList(),
-    ),
+private val kotlinTag = Tag(Uuid.random(), "Kotlin")
+private val basicsTag = Tag(Uuid.random(), "Basics")
+
+private val previewCardDataClass = CardWithTags(
+    card = Card(Uuid.random(), Uuid.random(), "What is a data class?", "Auto equals/hashCode/toString/copy", null),
+    tags = listOf(kotlinTag, basicsTag),
 )
+private val previewCardCompose = CardWithTags(
+    card = Card(Uuid.random(), Uuid.random(), "What is Compose?", "A declarative UI toolkit", null),
+    tags = emptyList(),
+)
+private val previewCards = listOf(previewCardDataClass, previewCardCompose)
+
+/** Tags used by [previewCards] -- mirrors how [SetDetailViewModel] derives `availableTagFilters`. */
+private val previewTagFilters = previewCards.flatMap { it.tags }.distinctBy { it.id }
 
 @Preview(name = "Set Detail - populated", showBackground = true)
 @Composable
 private fun SetDetailScreenPopulatedPreview() {
     FlashcardsTheme {
         SetDetailScreen(
-            uiState = SetDetailUiState(setName = "Kotlin Basics", cards = previewCards, isLoading = false),
+            uiState = SetDetailUiState(
+                setName = "Kotlin Basics",
+                cards = previewCards,
+                isLoading = false,
+                availableTagFilters = previewTagFilters,
+            ),
             onAddCardClick = {},
             onCardRowClick = {},
             onStartPracticeClick = {},
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
+            onSearchQueryChange = {},
+            onTagFilterSelect = {},
         )
     }
 }
@@ -237,6 +292,80 @@ private fun SetDetailScreenEmptyPreview() {
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
+            onSearchQueryChange = {},
+            onTagFilterSelect = {},
+        )
+    }
+}
+
+@Preview(name = "Set Detail - search query typed", showBackground = true)
+@Composable
+private fun SetDetailScreenSearchQueryPreview() {
+    FlashcardsTheme {
+        SetDetailScreen(
+            uiState = SetDetailUiState(
+                setName = "Kotlin Basics",
+                cards = listOf(previewCardCompose),
+                isLoading = false,
+                searchQuery = "Compose",
+                availableTagFilters = previewTagFilters,
+            ),
+            onAddCardClick = {},
+            onCardRowClick = {},
+            onStartPracticeClick = {},
+            onDeleteRequest = {},
+            onDeleteConfirm = {},
+            onDeleteCancel = {},
+            onSearchQueryChange = {},
+            onTagFilterSelect = {},
+        )
+    }
+}
+
+@Preview(name = "Set Detail - tag filter selected", showBackground = true)
+@Composable
+private fun SetDetailScreenTagFilterSelectedPreview() {
+    FlashcardsTheme {
+        SetDetailScreen(
+            uiState = SetDetailUiState(
+                setName = "Kotlin Basics",
+                cards = listOf(previewCardDataClass),
+                isLoading = false,
+                selectedTagFilter = kotlinTag.id,
+                availableTagFilters = previewTagFilters,
+            ),
+            onAddCardClick = {},
+            onCardRowClick = {},
+            onStartPracticeClick = {},
+            onDeleteRequest = {},
+            onDeleteConfirm = {},
+            onDeleteCancel = {},
+            onSearchQueryChange = {},
+            onTagFilterSelect = {},
+        )
+    }
+}
+
+@Preview(name = "Set Detail - no matching results", showBackground = true)
+@Composable
+private fun SetDetailScreenNoResultsPreview() {
+    FlashcardsTheme {
+        SetDetailScreen(
+            uiState = SetDetailUiState(
+                setName = "Kotlin Basics",
+                cards = emptyList(),
+                isLoading = false,
+                searchQuery = "xyz",
+                availableTagFilters = previewTagFilters,
+            ),
+            onAddCardClick = {},
+            onCardRowClick = {},
+            onStartPracticeClick = {},
+            onDeleteRequest = {},
+            onDeleteConfirm = {},
+            onDeleteCancel = {},
+            onSearchQueryChange = {},
+            onTagFilterSelect = {},
         )
     }
 }

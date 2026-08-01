@@ -18,6 +18,10 @@ class FakeCardRepository : CardRepository {
     val cardsBySetId = MutableStateFlow<List<CardWithTags>>(emptyList())
     var getCardResult: CardWithTags? = null
 
+    /** F04: settable result + call log for [searchCards], same precedent as [cardsBySetId]. */
+    val searchResults = MutableStateFlow<List<CardWithTags>>(emptyList())
+    val searchCardsCalls = mutableListOf<SearchCardsCall>()
+
     val createCardCalls = mutableListOf<CreateCardCall>()
     val updateCardCalls = mutableListOf<UpdateCardCall>()
     val deleteCardCalls = mutableListOf<Uuid>()
@@ -52,6 +56,13 @@ class FakeCardRepository : CardRepository {
     override suspend fun deleteCard(id: Uuid) {
         deleteCardCalls += id
     }
+
+    override fun searchCards(setId: Uuid, query: String, tagId: Uuid?): Flow<List<CardWithTags>> {
+        searchCardsCalls += SearchCardsCall(setId, query, tagId)
+        return searchResults
+    }
+
+    data class SearchCardsCall(val setId: Uuid, val query: String, val tagId: Uuid?)
 
     data class CreateCardCall(
         val setId: Uuid,

@@ -112,4 +112,96 @@ class CardDaoTest : BaseRoomDaoTest() {
             assertEquals(setOf(tag1, tag2), result[0].tags.toSet())
         }
     }
+
+    private fun card(setId: Uuid, front: String, back: String, notes: String? = null) = CardEntity(
+        id = Uuid.random(),
+        setId = setId,
+        front = front,
+        back = back,
+        notes = notes,
+    )
+
+    @Test
+    fun searchCards_emptyQueryNoTagFilter_returnsAllCardsInSet() = runTest {
+        val set = insertSet()
+        val card1 = card(set.id, "What is a data class?", "Auto equals/hashCode/toString/copy")
+        val card2 = card(set.id, "What is Compose?", "A declarative UI toolkit")
+        cardDao.insert(card1)
+        cardDao.insert(card2)
+
+        cardDao.searchCards(set.id, "", null).test {
+            val result = awaitItem()
+            assertEquals(setOf(card1, card2), result.map { it.card }.toSet())
+        }
+    }
+
+    @Test
+    fun searchCards_queryMatchesFrontCaseInsensitive_returnsMatchingCard() = runTest {
+        val set = insertSet()
+        val card1 = card(set.id, "What is a data class?", "Auto equals/hashCode/toString/copy")
+        val card2 = card(set.id, "What is Compose?", "A declarative UI toolkit")
+        cardDao.insert(card1)
+        cardDao.insert(card2)
+
+        cardDao.searchCards(set.id, "COMPOSE", null).test {
+            val result = awaitItem()
+            assertEquals(listOf(card2), result.map { it.card })
+        }
+    }
+
+    @Test
+    fun searchCards_queryMatchesBackOrNotes_returnsMatchingCard() = runTest {
+        val set = insertSet()
+        val card1 = card(set.id, "What is a data class?", "Auto equals/hashCode/toString/copy")
+        val card2 = card(set.id, "What is Compose?", "A declarative UI toolkit", notes = "Jetpack Compose")
+        cardDao.insert(card1)
+        cardDao.insert(card2)
+
+        cardDao.searchCards(set.id, "toolkit", null).test {
+            assertEquals(listOf(card2), awaitItem().map { it.card })
+        }
+
+        cardDao.searchCards(set.id, "jetpack", null).test {
+            assertEquals(listOf(card2), awaitItem().map { it.card })
+        }
+    }
+
+    @Test
+    fun searchCards_tagIdFilter_returnsOnlyCardsWithThatTag() = runTest {
+        val set = insertSet()
+        val card1 = card(set.id, "What is a data class?", "Auto equals/hashCode/toString/copy")
+        val card2 = card(set.id, "What is Compose?", "A declarative UI toolkit")
+        cardDao.insert(card1)
+        cardDao.insert(card2)
+        val tagDao = database.tagDao()
+        val crossRefDao = database.cardTagCrossRefDao()
+        val tag = TagEntity(id = Uuid.random(), name = "kotlin")
+        tagDao.insert(tag)
+        crossRefDao.insert(CardTagCrossRef(cardId = card1.id, tagId = tag.id))
+
+        cardDao.searchCards(set.id, "", tag.id).test {
+            val result = awaitItem()
+            assertEquals(listOf(card1), result.map { it.card })
+        }
+    }
+
+    @Test
+    fun searchCards_queryAndTagIdCombined_appliesBoth() = runTest {
+        val set = insertSet()
+        val card1 = card(set.id, "What is a data class?", "Auto equals/hashCode/toString/copy")
+        val card2 = card(set.id, "What is Compose?", "A declarative UI toolkit")
+        cardDao.insert(card1)
+        cardDao.insert(card2)
+        val tagDao = database.tagDao()
+        val crossRefDao = database.cardTagCrossRefDao()
+        val tag = TagEntity(id = Uuid.random(), name = "kotlin")
+        tagDao.insert(tag)
+        crossRefDao.insert(CardTagCrossRef(cardId = card1.id, tagId = tag.id))
+        crossRefDao.insert(CardTagCrossRef(cardId = card2.id, tagId = tag.id))
+
+        cardDao.searchCards(set.id, "compose", tag.id).test {
+            val result = awaitItem()
+            assertEquals(listOf(card2), result.map { it.card })
+        }
+    }
 }

@@ -46,4 +46,32 @@ interface CardDao {
     @Transaction
     @Query("SELECT * FROM cards WHERE id = :id")
     suspend fun getCardWithTagsById(id: Uuid): CardWithTagsEntity?
+
+    /**
+     * F04: cards in [setId] matching [query] (case-insensitive substring on
+     * front/back/notes; empty string matches everything) and, if [tagId] is
+     * non-null, restricted to cards tagged with it (AND semantics when both
+     * are supplied). Bound params throughout -- no string concatenation
+     * (PRD §9). Returns [CardWithTagsEntity] rather than a bare [CardEntity]
+     * list so the repository can reuse the exact same relation-to-domain
+     * mapping as [getCardsWithTagsBySetId] instead of a second, duplicate
+     * join: the `LEFT JOIN` against `card_tag_cross_ref` below is only used
+     * to *filter* by tagId, while the full tag list per card still comes
+     * from the `@Relation` in [CardWithTagsEntity] -- a card matching the
+     * tag filter should still display all of its tags, not just the
+     * matched one.
+     */
+    @Transaction
+    @Query(
+        """
+        SELECT DISTINCT c.* FROM cards c
+        LEFT JOIN card_tag_cross_ref x ON x.cardId = c.id
+        WHERE c.setId = :setId
+          AND (:query = '' OR c.front LIKE '%' || :query || '%' COLLATE NOCASE
+                           OR c.back LIKE '%' || :query || '%' COLLATE NOCASE
+                           OR c.notes LIKE '%' || :query || '%' COLLATE NOCASE)
+          AND (:tagId IS NULL OR x.tagId = :tagId)
+        """,
+    )
+    fun searchCards(setId: Uuid, query: String, tagId: Uuid?): Flow<List<CardWithTagsEntity>>
 }
