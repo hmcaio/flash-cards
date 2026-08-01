@@ -105,4 +105,21 @@ class CardRepositoryTest {
             assertEquals(listOf(Tag(tagId1, "Kotlin")), result[0].tags)
         }
     }
+
+    @Test
+    fun searchCards_delegatesToDaoAndMapsToCardWithTags() = runTest {
+        val cardEntity = CardEntity(id = cardId, setId = setId, front = "Front", back = "Back", notes = null)
+        val tagEntity = TagEntity(id = tagId1, name = "Kotlin")
+        fakeCardDao.searchCardsFlow.value = listOf(CardWithTagsEntity(card = cardEntity, tags = listOf(tagEntity)))
+
+        repository.searchCards(setId, "front", tagId1).test {
+            val result = awaitItem()
+            assertEquals(1, result.size)
+            assertEquals(cardId, result[0].card.id)
+            assertEquals("Front", result[0].card.front)
+            assertEquals(listOf(Tag(tagId1, "Kotlin")), result[0].tags)
+        }
+
+        assertEquals(listOf(Triple(setId, "front", tagId1)), fakeCardDao.searchCardsCalls)
+    }
 }

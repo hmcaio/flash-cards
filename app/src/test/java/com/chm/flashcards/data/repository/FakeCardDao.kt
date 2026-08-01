@@ -24,13 +24,17 @@ class FakeCardDao : CardDao {
     private val table = MutableStateFlow<List<CardEntity>>(emptyList())
     val cardsWithTagsFlow = MutableStateFlow<List<CardWithTagsEntity>>(emptyList())
 
+    /** Settable result + call log for [searchCards] -- a plain delegation fake, same precedent as [cardsWithTagsFlow]. */
+    val searchCardsFlow = MutableStateFlow<List<CardWithTagsEntity>>(emptyList())
+    val searchCardsCalls = mutableListOf<Triple<Uuid, String, Uuid?>>()
+
     val inserted = mutableListOf<CardEntity>()
     val updated = mutableListOf<CardEntity>()
     val deleted = mutableListOf<CardEntity>()
 
     override suspend fun insert(card: CardEntity) {
         inserted += card
-        table.value = table.value + card
+        table.value += card
     }
 
     override suspend fun update(card: CardEntity) {
@@ -63,4 +67,9 @@ class FakeCardDao : CardDao {
 
     override suspend fun getCardWithTagsById(id: Uuid): CardWithTagsEntity? =
         cardsWithTagsFlow.value.find { it.card.id == id }
+
+    override fun searchCards(setId: Uuid, query: String, tagId: Uuid?): Flow<List<CardWithTagsEntity>> {
+        searchCardsCalls += Triple(setId, query, tagId)
+        return searchCardsFlow
+    }
 }

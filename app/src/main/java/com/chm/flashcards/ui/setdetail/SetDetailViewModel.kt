@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -44,17 +46,51 @@ class SetDetailViewModel @Inject constructor(
     private val _navigateToSessionConfig = MutableSharedFlow<Unit>()
     val navigateToSessionConfig: SharedFlow<Unit> = _navigateToSessionConfig.asSharedFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    private val _selectedTagFilter = MutableStateFlow<Uuid?>(null)
+
     init {
         viewModelScope.launch {
             cardSetRepository.getAllSets().collect { sets ->
                 _uiState.update { it.copy(setName = sets.find { set -> set.id == setId }?.name.orEmpty()) }
             }
         }
+        // Independent subscription (not derived from the filtered `cards` below) so a tag
+        // chip stays visible/selectable even while a search/filter is narrowing the visible
+        // list -- spec.md: "a chip never shows zero results".
         viewModelScope.launch {
             cardRepository.getCardsBySetId(setId).collect { cards ->
-                _uiState.update { it.copy(cards = cards, isLoading = false) }
+                _uiState.update { state -> state.copy(availableTagFilters = cards.flatMap { it.tags }.distinctBy { it.id }) }
             }
         }
+        // Drives the visible card list from the current search query + tag filter. Blank
+        // query + no tag filter is treated as "no search" and delegates straight to
+        // getCardsBySetId (per spec.md) rather than routing an empty string through
+        // searchCards -- functionally equivalent (the DAO query already no-ops on an empty
+        // string) but keeps the plain, filter-free read path explicit.
+        viewModelScope.launch {
+            combine(_searchQuery, _selectedTagFilter) { query, tagId -> query.trim() to tagId }
+                .flatMapLatest { (trimmedQuery, tagId) ->
+                    if (trimmedQuery.isEmpty() && tagId == null) {
+                        cardRepository.getCardsBySetId(setId)
+                    } else {
+                        cardRepository.searchCards(setId, trimmedQuery, tagId)
+                    }
+                }
+                .collect { cards ->
+                    _uiState.update { it.copy(cards = cards, isLoading = false) }
+                }
+        }
+    }
+
+    fun onSearchQueryChange(text: String) {
+        _searchQuery.value = text
+        _uiState.update { it.copy(searchQuery = text) }
+    }
+
+    fun onTagFilterSelect(tagId: Uuid?) {
+        _selectedTagFilter.value = tagId
+        _uiState.update { it.copy(selectedTagFilter = tagId) }
     }
 
     fun onAddCardClick() {

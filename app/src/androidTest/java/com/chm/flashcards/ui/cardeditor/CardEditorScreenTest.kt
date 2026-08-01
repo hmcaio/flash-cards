@@ -2,6 +2,7 @@ package com.chm.flashcards.ui.cardeditor
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -68,6 +69,10 @@ class CardEditorScreenTest {
         composeRule.onNodeWithTag("cardSaveButton").performClick()
 
         composeRule.onNodeWithText("What is a data class?").assertIsDisplayed()
-        composeRule.onNodeWithText("Kotlin").assertIsDisplayed()
+        // F04 added a tag filter chip row above the card list, which (once this set has a
+        // "Kotlin"-tagged card) also renders a "Kotlin" chip alongside the card row's tag
+        // badge -- disambiguate by asserting on the first match rather than requiring exactly
+        // one, since this test only cares that the tag shows up somewhere, not which widget.
+        composeRule.onAllNodesWithText("Kotlin")[0].assertIsDisplayed()
     }
 }
