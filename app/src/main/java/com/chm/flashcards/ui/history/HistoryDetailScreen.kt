@@ -1,4 +1,4 @@
-package com.chm.flashcards.ui.sessionresults
+package com.chm.flashcards.ui.history
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,23 +20,23 @@ import com.chm.flashcards.ui.theme.FlashcardsTheme
 import kotlin.uuid.Uuid
 
 /**
- * F05 Session Results screen: score header ("X/Y correct") and two lists,
- * correct cards then incorrect cards -- the lists themselves are
- * [SessionOutcomeView] (extracted in F06 so History Detail can reuse the
- * same layout for a past session).
+ * F06 History Detail screen: reuses F05 Session Results' exact layout --
+ * score header ("X/Y correct") plus [SessionOutcomeView] -- for a *past*
+ * session looked up by id, rather than one just finished (spec.md "reuses
+ * the same layout as SessionResultsScreen").
  */
 @Composable
-fun SessionResultsScreen(
-    viewModel: SessionResultsViewModel = hiltViewModel(),
+fun HistoryDetailScreen(
+    viewModel: HistoryDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    SessionResultsScreen(uiState = uiState)
+    HistoryDetailScreen(uiState = uiState)
 }
 
 /** Stateless content, hoisted out of the [hiltViewModel]-backed overload above so it's previewable. */
 @Composable
-private fun SessionResultsScreen(uiState: SessionResultsUiState) {
+private fun HistoryDetailScreen(uiState: HistoryDetailUiState) {
     val total = uiState.correct.size + uiState.incorrect.size
     Scaffold { innerPadding ->
         Column(
@@ -48,7 +48,7 @@ private fun SessionResultsScreen(uiState: SessionResultsUiState) {
             Text(
                 "${uiState.correct.size}/$total correct",
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.testTag("scoreSummaryText"),
+                modifier = Modifier.testTag("historyScoreSummaryText"),
             )
             SessionOutcomeView(
                 correct = uiState.correct,
@@ -69,40 +69,29 @@ private fun previewCard(front: String) = Card(
     notes = null,
 )
 
-@Preview(name = "Session Results - mixed", showBackground = true)
+@Preview(name = "History Detail - mixed", showBackground = true)
 @Composable
-private fun SessionResultsScreenMixedPreview() {
+private fun HistoryDetailScreenMixedPreview() {
     FlashcardsTheme {
-        SessionResultsScreen(
-            uiState = SessionResultsUiState(
+        HistoryDetailScreen(
+            uiState = HistoryDetailUiState(
                 correct = listOf(previewCard("What is a data class?"), previewCard("What is Compose?")),
                 incorrect = listOf(previewCard("What is a sealed class?")),
+                isLoading = false,
             ),
         )
     }
 }
 
-@Preview(name = "Session Results - all correct", showBackground = true)
+@Preview(name = "History Detail - all correct", showBackground = true)
 @Composable
-private fun SessionResultsScreenAllCorrectPreview() {
+private fun HistoryDetailScreenAllCorrectPreview() {
     FlashcardsTheme {
-        SessionResultsScreen(
-            uiState = SessionResultsUiState(
+        HistoryDetailScreen(
+            uiState = HistoryDetailUiState(
                 correct = listOf(previewCard("What is a data class?"), previewCard("What is Compose?")),
                 incorrect = emptyList(),
-            ),
-        )
-    }
-}
-
-@Preview(name = "Session Results - all incorrect", showBackground = true)
-@Composable
-private fun SessionResultsScreenAllIncorrectPreview() {
-    FlashcardsTheme {
-        SessionResultsScreen(
-            uiState = SessionResultsUiState(
-                correct = emptyList(),
-                incorrect = listOf(previewCard("What is a sealed class?")),
+                isLoading = false,
             ),
         )
     }

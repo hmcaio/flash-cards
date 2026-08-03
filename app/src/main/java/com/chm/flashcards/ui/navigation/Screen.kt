@@ -35,7 +35,9 @@ sealed class Screen(val route: String) {
         fun createRoute(sessionId: String) = "session_results/$sessionId"
     }
 
-    data object HistoryList : Screen("history_list")
+    data object HistoryList : Screen("history_list/{$ARG_SET_ID}") {
+        fun createRoute(setId: String) = "history_list/$setId"
+    }
 
     data object HistoryDetail : Screen("history_detail/{$ARG_SESSION_ID}") {
         fun createRoute(sessionId: String) = "history_detail/$sessionId"

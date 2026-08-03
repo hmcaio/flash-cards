@@ -4,13 +4,16 @@ import com.chm.flashcards.common.IdGenerator
 import com.chm.flashcards.common.TimeProvider
 import com.chm.flashcards.data.dao.CardDao
 import com.chm.flashcards.data.dao.PracticeSessionDao
+import com.chm.flashcards.data.dao.PracticeSessionListItem
 import com.chm.flashcards.data.entity.CardEntity
 import com.chm.flashcards.data.entity.PracticeSessionEntity
 import com.chm.flashcards.data.entity.PracticeSessionResultEntity
 import com.chm.flashcards.domain.WeightedCardSelector
 import javax.inject.Inject
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 class PracticeRepositoryImpl @Inject constructor(
     private val cardDao: CardDao,
@@ -68,6 +71,18 @@ class PracticeRepositoryImpl @Inject constructor(
         val incorrect = answers.filterNot { it.wasCorrect }.mapNotNull { cardsById[it.cardId] }
         return PracticeSessionSummary(sessionId = draft.id, correct = correct, incorrect = incorrect)
     }
+
+    override fun getSessionsForSet(setId: Uuid): Flow<List<PracticeSessionListItem>> =
+        practiceSessionDao.getSessionListItems(setId)
+
+    override fun getSessionDetail(sessionId: Uuid): Flow<PracticeSessionSummary> =
+        practiceSessionDao.getResultsWithCardsBySessionId(sessionId).map { rows ->
+            PracticeSessionSummary(
+                sessionId = sessionId,
+                correct = rows.filter { it.result.wasCorrect }.map { it.card.toDomain() },
+                incorrect = rows.filterNot { it.result.wasCorrect }.map { it.card.toDomain() },
+            )
+        }
 
     private fun CardEntity.toDomain() = Card(
         id = id,

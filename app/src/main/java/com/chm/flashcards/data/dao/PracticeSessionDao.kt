@@ -38,4 +38,40 @@ interface PracticeSessionDao {
 
     @Query("SELECT * FROM practice_session_results WHERE sessionId = :sessionId")
     fun getResultsBySessionId(sessionId: Uuid): Flow<List<PracticeSessionResultEntity>>
+
+    /**
+     * F06: one row per session in [setId], newest first, with its score
+     * (correct/total) derived via correlated subqueries against
+     * `practice_session_results` rather than loaded-then-computed in Kotlin --
+     * see spec.md.
+     */
+    @Query(
+        """
+        SELECT s.id AS sessionId, s.startedAt AS startedAt,
+               (SELECT COUNT(*) FROM practice_session_results r WHERE r.sessionId = s.id AND r.wasCorrect = 1) AS correctCount,
+               (SELECT COUNT(*) FROM practice_session_results r WHERE r.sessionId = s.id) AS totalCount
+        FROM practice_sessions s
+        WHERE s.setId = :setId
+        ORDER BY s.startedAt DESC
+        """,
+    )
+    fun getSessionListItems(setId: Uuid): Flow<List<PracticeSessionListItem>>
+
+    /**
+     * F06: every result row for [sessionId] joined with the [com.chm.flashcards.data.entity.CardEntity]
+     * it refers to (`INNER JOIN cards`), for History Detail -- see
+     * [PracticeSessionResultWithCard].
+     */
+    @Query(
+        """
+        SELECT r.*,
+               c.id AS card_id, c.setId AS card_setId, c.front AS card_front, c.back AS card_back,
+               c.notes AS card_notes, c.timesCorrect AS card_timesCorrect, c.timesIncorrect AS card_timesIncorrect,
+               c.lastPracticedAt AS card_lastPracticedAt
+        FROM practice_session_results r
+        INNER JOIN cards c ON c.id = r.cardId
+        WHERE r.sessionId = :sessionId
+        """,
+    )
+    fun getResultsWithCardsBySessionId(sessionId: Uuid): Flow<List<PracticeSessionResultWithCard>>
 }

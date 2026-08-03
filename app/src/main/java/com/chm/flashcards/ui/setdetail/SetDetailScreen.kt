@@ -52,6 +52,7 @@ import kotlin.uuid.Uuid
 fun SetDetailScreen(
     onCardClick: (Uuid?) -> Unit,
     onStartPracticeClick: () -> Unit,
+    onHistoryClick: () -> Unit,
     viewModel: SetDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -62,12 +63,16 @@ fun SetDetailScreen(
     LaunchedEffect(Unit) {
         viewModel.navigateToSessionConfig.collect { onStartPracticeClick() }
     }
+    LaunchedEffect(Unit) {
+        viewModel.navigateToHistoryList.collect { onHistoryClick() }
+    }
 
     SetDetailScreen(
         uiState = uiState,
         onAddCardClick = viewModel::onAddCardClick,
         onCardRowClick = viewModel::onCardClick,
         onStartPracticeClick = viewModel::onStartPracticeClick,
+        onHistoryClick = viewModel::onHistoryClick,
         onDeleteRequest = viewModel::onDeleteRequest,
         onDeleteConfirm = viewModel::onDeleteConfirm,
         onDeleteCancel = viewModel::onDeleteCancel,
@@ -83,6 +88,7 @@ private fun SetDetailScreen(
     onAddCardClick: () -> Unit,
     onCardRowClick: (Uuid) -> Unit,
     onStartPracticeClick: () -> Unit,
+    onHistoryClick: () -> Unit,
     onDeleteRequest: (Uuid) -> Unit,
     onDeleteConfirm: (Uuid) -> Unit,
     onDeleteCancel: () -> Unit,
@@ -109,14 +115,23 @@ private fun SetDetailScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(16.dp),
             )
-            Button(
-                onClick = onStartPracticeClick,
-                enabled = uiState.hasCards,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .testTag("startPracticeButton"),
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Start Practice")
+                Button(
+                    onClick = onStartPracticeClick,
+                    enabled = uiState.hasCards,
+                    modifier = Modifier.testTag("startPracticeButton"),
+                ) {
+                    Text("Start Practice")
+                }
+                TextButton(
+                    onClick = onHistoryClick,
+                    modifier = Modifier.testTag("historyButton"),
+                ) {
+                    Text("History")
+                }
             }
             if (!uiState.hasCards) {
                 Text(
@@ -282,6 +297,7 @@ private fun SetDetailScreenPopulatedPreview() {
             onAddCardClick = {},
             onCardRowClick = {},
             onStartPracticeClick = {},
+            onHistoryClick = {},
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
@@ -300,6 +316,7 @@ private fun SetDetailScreenEmptyPreview() {
             onAddCardClick = {},
             onCardRowClick = {},
             onStartPracticeClick = {},
+            onHistoryClick = {},
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
@@ -325,6 +342,7 @@ private fun SetDetailScreenSearchQueryPreview() {
             onAddCardClick = {},
             onCardRowClick = {},
             onStartPracticeClick = {},
+            onHistoryClick = {},
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
@@ -350,6 +368,7 @@ private fun SetDetailScreenTagFilterSelectedPreview() {
             onAddCardClick = {},
             onCardRowClick = {},
             onStartPracticeClick = {},
+            onHistoryClick = {},
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
@@ -375,6 +394,7 @@ private fun SetDetailScreenNoResultsPreview() {
             onAddCardClick = {},
             onCardRowClick = {},
             onStartPracticeClick = {},
+            onHistoryClick = {},
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},

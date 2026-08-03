@@ -117,4 +117,91 @@ class PracticeSessionDaoTest : BaseRoomDaoTest() {
             assertEquals(listOf(result), awaitItem())
         }
     }
+
+    /** F06: newest session first, score derived from correct/total result counts, not just the requested card count. */
+    @Test
+    fun getSessionListItems_returnsScoreAndOrdersByStartedAtDescending() = runTest {
+        val (set, cardEntity) = insertSetAndCard()
+        val earlier = session(set.id, Instant.parse("2026-01-10T00:00:00Z")).copy(requestedCardCount = 5)
+        val later = session(set.id, Instant.parse("2026-01-20T00:00:00Z")).copy(requestedCardCount = 2)
+        practiceSessionDao.insertSessionWithResults(
+            earlier,
+            List(5) { index ->
+                PracticeSessionResultEntity(
+                    id = Uuid.random(),
+                    sessionId = earlier.id,
+                    cardId = cardEntity.id,
+                    wasCorrect = index < 3,
+                )
+            },
+        )
+        practiceSessionDao.insertSessionWithResults(
+            later,
+            List(2) { index ->
+                PracticeSessionResultEntity(
+                    id = Uuid.random(),
+                    sessionId = later.id,
+                    cardId = cardEntity.id,
+                    wasCorrect = index < 1,
+                )
+            },
+        )
+
+        practiceSessionDao.getSessionListItems(set.id).test {
+            val items = awaitItem()
+            assertEquals(
+                listOf(
+                    PracticeSessionListItem(later.id, later.startedAt, correctCount = 1, totalCount = 2),
+                    PracticeSessionListItem(earlier.id, earlier.startedAt, correctCount = 3, totalCount = 5),
+                ),
+                items,
+            )
+        }
+    }
+
+    /** F06: each result row joined with its card's front/back (and the rest of [CardEntity]). */
+    @Test
+    fun getResultsWithCardsBySessionId_returnsResultsJoinedWithCardFrontBack() = runTest {
+        val (set, cardEntity) = insertSetAndCard()
+        val practiceSession = session(set.id, Instant.parse("2026-02-01T00:00:00Z"))
+        val result = PracticeSessionResultEntity(
+            id = Uuid.random(),
+            sessionId = practiceSession.id,
+            cardId = cardEntity.id,
+            wasCorrect = true,
+        )
+        practiceSessionDao.insertSessionWithResults(practiceSession, listOf(result))
+
+        practiceSessionDao.getResultsWithCardsBySessionId(practiceSession.id).test {
+            val rows = awaitItem()
+            assertEquals(1, rows.size)
+            assertEquals(result, rows.single().result)
+            assertEquals(cardEntity, rows.single().card)
+        }
+    }
+
+    /**
+     * F06 / spec.md accepted edge case: deleting a card cascades to delete its
+     * [PracticeSessionResultEntity] row (F01 FK), so a past session's score can
+     * shrink. This locks in that behavior as a regression test rather than
+     * driving new production code -- it should already pass from F01's FK.
+     */
+    @Test
+    fun getResultsWithCardsBySessionId_deletedCard_excludesThatResult() = runTest {
+        val (set, cardEntity) = insertSetAndCard()
+        val practiceSession = session(set.id, Instant.parse("2026-02-01T00:00:00Z"))
+        val result = PracticeSessionResultEntity(
+            id = Uuid.random(),
+            sessionId = practiceSession.id,
+            cardId = cardEntity.id,
+            wasCorrect = true,
+        )
+        practiceSessionDao.insertSessionWithResults(practiceSession, listOf(result))
+
+        cardDao.delete(cardEntity)
+
+        practiceSessionDao.getResultsWithCardsBySessionId(practiceSession.id).test {
+            assertEquals(emptyList<PracticeSessionResultWithCard>(), awaitItem())
+        }
+    }
 }

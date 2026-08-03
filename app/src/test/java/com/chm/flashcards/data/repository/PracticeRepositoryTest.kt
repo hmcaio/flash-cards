@@ -1,8 +1,12 @@
 package com.chm.flashcards.data.repository
 
+import app.cash.turbine.test
 import com.chm.flashcards.common.FakeIdGenerator
 import com.chm.flashcards.common.FakeTimeProvider
+import com.chm.flashcards.data.dao.PracticeSessionListItem
+import com.chm.flashcards.data.dao.PracticeSessionResultWithCard
 import com.chm.flashcards.data.entity.CardEntity
+import com.chm.flashcards.data.entity.PracticeSessionResultEntity
 import java.time.Instant
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.test.runTest
@@ -154,6 +158,62 @@ class PracticeRepositoryTest {
         assertEquals(sessionId, summary.sessionId)
         assertEquals(listOf(card1.id), summary.correct.map { it.id })
         assertEquals(listOf(card2.id), summary.incorrect.map { it.id })
+    }
+
+    @Test
+    fun getSessionsForSet_mapsDaoProjectionToDomainListItem() = runTest {
+        val item1 = PracticeSessionListItem(
+            sessionId = sessionId,
+            startedAt = Instant.parse("2026-02-01T00:00:00Z"),
+            correctCount = 3,
+            totalCount = 5,
+        )
+        val item2 = PracticeSessionListItem(
+            sessionId = Uuid.parse("00000000-0000-0000-0000-0000000000cc"),
+            startedAt = Instant.parse("2026-01-01T00:00:00Z"),
+            correctCount = 1,
+            totalCount = 2,
+        )
+        fakePracticeSessionDao.sessionListItemsBySetId[setId] = listOf(item1, item2)
+
+        repository.getSessionsForSet(setId).test {
+            assertEquals(listOf(item1, item2), awaitItem())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun getSessionDetail_mapsResultsWithCardsToCorrectAndIncorrectLists() = runTest {
+        val correctCard = cardEntity("Q1")
+        val incorrectCard = cardEntity("Q2")
+        fakePracticeSessionDao.resultsWithCardsBySessionId[sessionId] = listOf(
+            PracticeSessionResultWithCard(
+                result = PracticeSessionResultEntity(
+                    id = Uuid.random(),
+                    sessionId = sessionId,
+                    cardId = correctCard.id,
+                    wasCorrect = true,
+                ),
+                card = correctCard,
+            ),
+            PracticeSessionResultWithCard(
+                result = PracticeSessionResultEntity(
+                    id = Uuid.random(),
+                    sessionId = sessionId,
+                    cardId = incorrectCard.id,
+                    wasCorrect = false,
+                ),
+                card = incorrectCard,
+            ),
+        )
+
+        repository.getSessionDetail(sessionId).test {
+            val summary = awaitItem()
+            assertEquals(sessionId, summary.sessionId)
+            assertEquals(listOf(correctCard.id), summary.correct.map { it.id })
+            assertEquals(listOf(incorrectCard.id), summary.incorrect.map { it.id })
+            awaitComplete()
+        }
     }
 
     private fun CardEntity.toDomain() = Card(
