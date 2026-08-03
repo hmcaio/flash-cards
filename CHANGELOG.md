@@ -24,5 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Practice session (F05): weighted practice sessions with new Session Config,
   Session Play, and Session Results screens, backed by `PracticeRepository`
   and a weighted-without-replacement `WeightedCardSelector`.
+- Practice history (F06): new History List and History Detail screens showing
+  past practice sessions per set (date, score) and their full correct/incorrect
+  breakdown, reached from a new "History" button on Set Detail.
 
 [Unreleased]: https://github.com/hmcaio/flash-cards/commits/main

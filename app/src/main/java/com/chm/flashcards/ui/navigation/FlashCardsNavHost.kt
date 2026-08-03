@@ -10,6 +10,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.chm.flashcards.ui.cardeditor.CardEditorScreen
+import com.chm.flashcards.ui.history.HistoryDetailScreen
+import com.chm.flashcards.ui.history.HistoryListScreen
 import com.chm.flashcards.ui.sessionconfig.SessionConfigScreen
 import com.chm.flashcards.ui.sessionplay.SessionPlayScreen
 import com.chm.flashcards.ui.sessionresults.SessionResultsScreen
@@ -46,6 +48,9 @@ fun FlashCardsNavHost(
                 },
                 onStartPracticeClick = {
                     navController.navigate(Screen.SessionConfig.createRoute(setId))
+                },
+                onHistoryClick = {
+                    navController.navigate(Screen.HistoryList.createRoute(setId))
                 },
             )
         }
@@ -86,14 +91,21 @@ fun FlashCardsNavHost(
         ) {
             SessionResultsScreen()
         }
-        composable(Screen.HistoryList.route) {
-            Text("TODO: HistoryList")
+        composable(
+            route = Screen.HistoryList.route,
+            arguments = listOf(navArgument(Screen.ARG_SET_ID) { type = NavType.StringType }),
+        ) {
+            HistoryListScreen(
+                onSessionClick = { sessionId: Uuid ->
+                    navController.navigate(Screen.HistoryDetail.createRoute(sessionId.toString()))
+                },
+            )
         }
         composable(
             route = Screen.HistoryDetail.route,
             arguments = listOf(navArgument(Screen.ARG_SESSION_ID) { type = NavType.StringType }),
         ) {
-            Text("TODO: HistoryDetail")
+            HistoryDetailScreen()
         }
         composable(Screen.ImportExport.route) {
             Text("TODO: ImportExport")

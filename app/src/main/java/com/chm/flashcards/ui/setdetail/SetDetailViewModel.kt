@@ -46,6 +46,9 @@ class SetDetailViewModel @Inject constructor(
     private val _navigateToSessionConfig = MutableSharedFlow<Unit>()
     val navigateToSessionConfig: SharedFlow<Unit> = _navigateToSessionConfig.asSharedFlow()
 
+    private val _navigateToHistoryList = MutableSharedFlow<Unit>()
+    val navigateToHistoryList: SharedFlow<Unit> = _navigateToHistoryList.asSharedFlow()
+
     private val _searchQuery = MutableStateFlow("")
     private val _selectedTagFilter = MutableStateFlow<Uuid?>(null)
 
@@ -108,6 +111,10 @@ class SetDetailViewModel @Inject constructor(
 
     fun onStartPracticeClick() {
         viewModelScope.launch { _navigateToSessionConfig.emit(Unit) }
+    }
+
+    fun onHistoryClick() {
+        viewModelScope.launch { _navigateToHistoryList.emit(Unit) }
     }
 
     fun onDeleteRequest(cardId: Uuid) {
