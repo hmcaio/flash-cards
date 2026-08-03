@@ -95,4 +95,26 @@ class PracticeSessionDaoTest : BaseRoomDaoTest() {
             assertEquals(listOf(later, earlier), awaitItem())
         }
     }
+
+    /** F05: [PracticeSessionDao.insertSessionWithResults] writes both the session and its result rows in one call. */
+    @Test
+    fun insertSessionWithResults_persistsBothSessionAndResultRows() = runTest {
+        val (set, cardEntity) = insertSetAndCard()
+        val practiceSession = session(set.id, Instant.parse("2026-02-01T00:00:00Z"))
+        val result = PracticeSessionResultEntity(
+            id = Uuid.random(),
+            sessionId = practiceSession.id,
+            cardId = cardEntity.id,
+            wasCorrect = true,
+        )
+
+        practiceSessionDao.insertSessionWithResults(practiceSession, listOf(result))
+
+        practiceSessionDao.getSessionsBySetId(set.id).test {
+            assertEquals(listOf(practiceSession), awaitItem())
+        }
+        practiceSessionDao.getResultsBySessionId(practiceSession.id).test {
+            assertEquals(listOf(result), awaitItem())
+        }
+    }
 }

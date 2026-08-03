@@ -21,5 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Card search (F04): search text field and single-select tag filter chip row
   on Set Detail, filtering the card list by front/back/notes and/or tag via
   `CardDao.searchCards`/`CardRepository.searchCards`.
+- Practice session (F05): weighted practice sessions with new Session Config,
+  Session Play, and Session Results screens, backed by `PracticeRepository`
+  and a weighted-without-replacement `WeightedCardSelector`.
 
 [Unreleased]: https://github.com/hmcaio/flash-cards/commits/main
