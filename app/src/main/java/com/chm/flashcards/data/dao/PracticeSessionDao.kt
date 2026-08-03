@@ -18,6 +18,21 @@ interface PracticeSessionDao {
     @Insert
     suspend fun insertResults(results: List<PracticeSessionResultEntity>)
 
+    /**
+     * F05: [insert]s the session row and [insertResults] the per-card result
+     * rows in one atomic transaction (spec.md "completeSession runs in one
+     * @Transaction") -- `PracticeRepositoryImpl.completeSession` then updates
+     * each touched card's stats via `CardDao.updateStats` as a separate,
+     * non-transactional loop afterward (same looser-consistency precedent as
+     * `CardRepositoryImpl`'s tag replace, reasonable for a single-user
+     * offline app).
+     */
+    @Transaction
+    suspend fun insertSessionWithResults(session: PracticeSessionEntity, results: List<PracticeSessionResultEntity>) {
+        insert(session)
+        insertResults(results)
+    }
+
     @Query("SELECT * FROM practice_sessions WHERE setId = :setId ORDER BY startedAt DESC")
     fun getSessionsBySetId(setId: Uuid): Flow<List<PracticeSessionEntity>>
 

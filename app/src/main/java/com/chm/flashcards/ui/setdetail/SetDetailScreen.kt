@@ -111,11 +111,21 @@ private fun SetDetailScreen(
             )
             Button(
                 onClick = onStartPracticeClick,
+                enabled = uiState.hasCards,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .testTag("startPracticeButton"),
             ) {
                 Text("Start Practice")
+            }
+            if (!uiState.hasCards) {
+                Text(
+                    "Add a card to start a practice session",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .testTag("startPracticeHint"),
+                )
             }
             OutlinedTextField(
                 value = uiState.searchQuery,
@@ -267,6 +277,7 @@ private fun SetDetailScreenPopulatedPreview() {
                 cards = previewCards,
                 isLoading = false,
                 availableTagFilters = previewTagFilters,
+                hasCards = true,
             ),
             onAddCardClick = {},
             onCardRowClick = {},
@@ -309,6 +320,7 @@ private fun SetDetailScreenSearchQueryPreview() {
                 isLoading = false,
                 searchQuery = "Compose",
                 availableTagFilters = previewTagFilters,
+                hasCards = true,
             ),
             onAddCardClick = {},
             onCardRowClick = {},
@@ -333,6 +345,7 @@ private fun SetDetailScreenTagFilterSelectedPreview() {
                 isLoading = false,
                 selectedTagFilter = kotlinTag.id,
                 availableTagFilters = previewTagFilters,
+                hasCards = true,
             ),
             onAddCardClick = {},
             onCardRowClick = {},
@@ -357,6 +370,7 @@ private fun SetDetailScreenNoResultsPreview() {
                 isLoading = false,
                 searchQuery = "xyz",
                 availableTagFilters = previewTagFilters,
+                hasCards = true,
             ),
             onAddCardClick = {},
             onCardRowClick = {},

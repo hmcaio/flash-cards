@@ -16,6 +16,13 @@ import kotlin.uuid.Uuid
  * by cards in *this* set (not the global tag list from F03's
  * `TagRepository`), so a chip never shows zero results (spec.md "Edge
  * cases").
+ *
+ * F05 addition: [hasCards] reflects the set's *unfiltered* card count (not
+ * [cards].isNotEmpty(), which reflects the current search/tag filter) --
+ * drives disabling the "Start Practice" button when the set has zero cards
+ * (F05 spec.md edge case: Session Config shouldn't be reachable with no
+ * cards to select from). Defaults `false` so the button doesn't flash
+ * enabled before the first load completes.
  */
 data class SetDetailUiState(
     val setName: String = "",
@@ -25,4 +32,5 @@ data class SetDetailUiState(
     val searchQuery: String = "",
     val selectedTagFilter: Uuid? = null,
     val availableTagFilters: List<Tag> = emptyList(),
+    val hasCards: Boolean = false,
 )

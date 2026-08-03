@@ -60,7 +60,12 @@ class SetDetailViewModel @Inject constructor(
         // list -- spec.md: "a chip never shows zero results".
         viewModelScope.launch {
             cardRepository.getCardsBySetId(setId).collect { cards ->
-                _uiState.update { state -> state.copy(availableTagFilters = cards.flatMap { it.tags }.distinctBy { it.id }) }
+                _uiState.update { state ->
+                    state.copy(
+                        availableTagFilters = cards.flatMap { it.tags }.distinctBy { it.id },
+                        hasCards = cards.isNotEmpty(),
+                    )
+                }
             }
         }
         // Drives the visible card list from the current search query + tag filter. Blank
