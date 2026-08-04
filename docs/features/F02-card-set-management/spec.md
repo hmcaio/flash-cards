@@ -1,6 +1,6 @@
 # F02 — Card Set Management
 
-Status: not started
+Status: done
 Depends on: F01
 PRD refs: §3 req 1, §5 screen "Set List"
 

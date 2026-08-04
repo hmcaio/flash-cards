@@ -1,6 +1,6 @@
 # F01 — Data Layer & App Shell
 
-Status: not started
+Status: done
 Depends on: —
 PRD refs: §4 Data model, §5 Architecture, §9 Security
 

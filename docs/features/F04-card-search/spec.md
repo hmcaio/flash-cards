@@ -1,6 +1,6 @@
 # F04 — Card Search
 
-Status: not started
+Status: done
 Depends on: F01, F03
 PRD refs: §3 req 6, §7 Search
 
@@ -67,3 +67,10 @@ debouncing would be premature optimization.
       text search narrows further.
 - [ ] Clearing search text and deselecting the tag chip restores the full list.
 - [ ] `SetDetailScreen`'s `@Preview`s (from F03) cover the search/tag-filter states.
+
+## Implementation notes (post-hoc, added after F01–F07 shipped)
+`CardDao.searchCards` returns `Flow<List<CardWithTagsEntity>>` (via
+`@Transaction`, reusing the same `@Relation` projection F03's
+`getCardsWithTagsBySetId` uses), not `Flow<List<CardEntity>>` as shown
+above — so results already carry each card's full tag list rather than
+needing a second join step in the repository.

@@ -1,6 +1,6 @@
 # F07 — Import / Export
 
-Status: not started
+Status: done
 Depends on: F01, F02, F03
 PRD refs: §3 req 7, §5 screen "Import/Export", §8, §9
 
@@ -92,3 +92,25 @@ needed at personal-app data volumes.
       error and zero DB writes.
 - [ ] `ImportExportScreen` has `@Preview`s per the project's Compose preview
       convention.
+
+## Implementation notes (post-hoc, added after F01–F07 shipped)
+- `ImportExportRepositoryImpl` depends on `CardSetRepository`/`CardRepository`
+  rather than raw DAOs — stronger reuse than "reuse F03's get-or-create-by-name
+  logic" above implied: tag resolution, id generation, and validation
+  boundaries are all inherited by going through the repository layer, not
+  just the tag lookup.
+- Import/export transactions go through a new `data/TransactionRunner.kt`
+  abstraction (`TransactionRunner`/`RoomTransactionRunner`/`FakeTransactionRunner`)
+  wrapping `RoomDatabase.withTransaction`, rather than a bare
+  `db.withTransaction {}` block inline — same fakeable-dependency shape as
+  `IdGenerator`/`TimeProvider`, so `ImportExportRepositoryImpl` stays
+  unit-testable.
+- SAF `DocumentWriter`/`DocumentReader` bindings live in their own
+  `di/DocumentIoModule.kt`, separate from `di/RepositoryModule.kt`, so
+  androidTest can swap the whole module via `@TestInstallIn` without
+  re-declaring every other binding.
+- The Set List entry point to this screen is a plain `TextButton`
+  ("Import / Export"), not an actual overflow/dropdown menu — the app has
+  no icon/menu infrastructure anywhere else yet, so a plain button matches
+  existing conventions (e.g. `SetDetailScreen`'s "History" button) better
+  than introducing the first `DropdownMenu` in the codebase for one entry.
