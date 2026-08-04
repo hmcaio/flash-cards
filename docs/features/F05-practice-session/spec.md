@@ -1,6 +1,6 @@
 # F05 — Practice Session
 
-Status: not started
+Status: done
 Depends on: F01, F02, F03
 PRD refs: §3 req 4, §5 screens "Session Config/Play/Results", §6 algorithm
 
@@ -102,3 +102,15 @@ singleton just to pass this list).
 - [ ] Backing out mid-session persists nothing.
 - [ ] `SessionConfigScreen`, `SessionPlayScreen`, and `SessionResultsScreen`
       have `@Preview`s per the project's Compose preview convention.
+
+## Implementation notes (post-hoc, added after F01–F07 shipped)
+- `WeightedCardSelector` shipped as a plain `interface`, not the `fun
+  interface` shown above — Kotlin rejects a defaulted parameter
+  (`random: Random = Random.Default`) on a functional interface's single
+  abstract method.
+- `ui/session/PracticeSessionHolder.kt` (`@ActivityRetainedScoped`) was
+  added to carry the `PracticeSessionDraft`/`PracticeSessionSummary`
+  between `SessionConfig`/`SessionPlay`/`SessionResults`, replacing this
+  doc's vaguer "shared session-scoped ViewModel" suggestion — a
+  `@HiltViewModel` can't inject another `@HiltViewModel`, so a plain
+  retained-scope holder class fills that role instead.

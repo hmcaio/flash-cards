@@ -1,6 +1,6 @@
 # F03 — Card & Tag Management
 
-Status: not started
+Status: done
 Depends on: F01, F02
 PRD refs: §3 req 2 & 3, §5 screens "Set Detail", "Card Editor"
 
@@ -100,3 +100,19 @@ everywhere below that point, same as F05/F06's session/history nav args.
 - [ ] Tag chips render on the Set Detail card list.
 - [ ] `CardEditorScreen` and `SetDetailScreen` have `@Preview`s per the
       project's Compose preview convention.
+
+## Implementation notes (post-hoc, added after F01–F07 shipped)
+- `CardWithTags` shipped as two types, not one: `data.dao.CardWithTagsEntity`
+  (Room `@Relation`/`@Junction` projection used by `CardDao`'s query) and
+  `data.repository.CardWithTags` (domain model holding `Card` + `List<Tag>`).
+  `CardRepositoryImpl` maps between them at the repository boundary — same
+  split precedent as `CardSetEntity`/`CardSet` in F02, just not shown in
+  this doc's original snippet.
+- `SetDetailViewModel` takes `CardSetRepository` as an extra constructor
+  dependency (not in the snippet above), purely to read the set's name for
+  the screen title via `getAllSets()` — no new method was added to F02's
+  repository for this.
+- `common/CardValidationRules.kt` (front/back/notes length, tag name length,
+  max-tags-per-card) was extracted out of `CardEditorViewModel` *later*,
+  during F07, so import validation could share the same limits instead of
+  duplicating magic numbers. See F07's spec.md for that side of the story.

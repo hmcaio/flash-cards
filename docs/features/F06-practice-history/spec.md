@@ -1,6 +1,6 @@
 # F06 — Practice History
 
-Status: not started
+Status: done
 Depends on: F01, F05
 PRD refs: §3 req 5, §5 screens "History List/Detail"
 
