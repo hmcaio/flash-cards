@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-04
+
 ### Added
 - Data layer & app shell (F01): Room entities/DAOs for card sets, cards,
   tags, and practice sessions (`kotlin.uuid.Uuid` ids via a Room
@@ -31,4 +33,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   picker, with schema/size/content validation and a Replace-all vs.
   Add-as-new-sets choice, reached from a new "Import / Export" button on Set List.
 
-[Unreleased]: https://github.com/hmcaio/flash-cards/commits/main
+[Unreleased]: https://github.com/hmcaio/flash-cards/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/hmcaio/flash-cards/compare/a51d4f1...v1.0.0
