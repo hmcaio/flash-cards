@@ -27,5 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Practice history (F06): new History List and History Detail screens showing
   past practice sessions per set (date, score) and their full correct/incorrect
   breakdown, reached from a new "History" button on Set Detail.
+- Import/export (F07): whole-library JSON export/import via the system file
+  picker, with schema/size/content validation and a Replace-all vs.
+  Add-as-new-sets choice, reached from a new "Import / Export" button on Set List.
 
 [Unreleased]: https://github.com/hmcaio/flash-cards/commits/main
