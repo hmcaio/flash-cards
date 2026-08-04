@@ -1,6 +1,5 @@
 package com.chm.flashcards.ui.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -12,6 +11,7 @@ import androidx.navigation.navArgument
 import com.chm.flashcards.ui.cardeditor.CardEditorScreen
 import com.chm.flashcards.ui.history.HistoryDetailScreen
 import com.chm.flashcards.ui.history.HistoryListScreen
+import com.chm.flashcards.ui.importexport.ImportExportScreen
 import com.chm.flashcards.ui.sessionconfig.SessionConfigScreen
 import com.chm.flashcards.ui.sessionplay.SessionPlayScreen
 import com.chm.flashcards.ui.sessionresults.SessionResultsScreen
@@ -20,9 +20,9 @@ import com.chm.flashcards.ui.setlist.SetListScreen
 import kotlin.uuid.Uuid
 
 /**
- * App-wide nav graph. Every destination is a placeholder until its owning
- * feature replaces it with real screen content -- F03 replaces `SetDetail`
- * and `CardEditor`; the rest stay placeholders until F05+.
+ * App-wide nav graph. As of F07 every destination has real screen content --
+ * F03 replaced `SetDetail`/`CardEditor`, F05/F06 replaced the session and
+ * history screens, and F07 replaces `ImportExport`, the last placeholder.
  */
 @Composable
 fun FlashCardsNavHost(
@@ -34,6 +34,9 @@ fun FlashCardsNavHost(
             SetListScreen(
                 onSetClick = { setId: Uuid ->
                     navController.navigate(Screen.SetDetail.createRoute(setId.toString()))
+                },
+                onImportExportClick = {
+                    navController.navigate(Screen.ImportExport.route)
                 },
             )
         }
@@ -108,7 +111,7 @@ fun FlashCardsNavHost(
             HistoryDetailScreen()
         }
         composable(Screen.ImportExport.route) {
-            Text("TODO: ImportExport")
+            ImportExportScreen(onNavigateBack = { navController.popBackStack() })
         }
     }
 }

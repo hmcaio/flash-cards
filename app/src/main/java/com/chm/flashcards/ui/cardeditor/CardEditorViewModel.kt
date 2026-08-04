@@ -3,6 +3,10 @@ package com.chm.flashcards.ui.cardeditor
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chm.flashcards.common.CardValidationRules.MAX_FRONT_BACK_LENGTH
+import com.chm.flashcards.common.CardValidationRules.MAX_NOTES_LENGTH
+import com.chm.flashcards.common.CardValidationRules.MAX_TAGS
+import com.chm.flashcards.common.CardValidationRules.MAX_TAG_NAME_LENGTH
 import com.chm.flashcards.data.repository.CardRepository
 import com.chm.flashcards.data.repository.TagRepository
 import com.chm.flashcards.ui.navigation.Screen
@@ -17,11 +21,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-private const val MAX_FRONT_BACK_LENGTH = 1000
-private const val MAX_NOTES_LENGTH = 2000
-private const val MAX_TAG_NAME_LENGTH = 50
-private const val MAX_TAGS = 10
 
 /**
  * `cardId` nav arg is `null`/blank for create mode (nothing loaded), or a

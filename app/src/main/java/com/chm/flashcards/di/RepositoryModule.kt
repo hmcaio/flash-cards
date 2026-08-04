@@ -1,9 +1,13 @@
 package com.chm.flashcards.di
 
+import com.chm.flashcards.data.TransactionRunner
+import com.chm.flashcards.data.RoomTransactionRunner
 import com.chm.flashcards.data.repository.CardRepository
 import com.chm.flashcards.data.repository.CardRepositoryImpl
 import com.chm.flashcards.data.repository.CardSetRepository
 import com.chm.flashcards.data.repository.CardSetRepositoryImpl
+import com.chm.flashcards.data.repository.ImportExportRepository
+import com.chm.flashcards.data.repository.ImportExportRepositoryImpl
 import com.chm.flashcards.data.repository.PracticeRepository
 import com.chm.flashcards.data.repository.PracticeRepositoryImpl
 import com.chm.flashcards.data.repository.TagRepository
@@ -38,5 +42,13 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
+    abstract fun bindImportExportRepository(impl: ImportExportRepositoryImpl): ImportExportRepository
+
+    @Binds
+    @Singleton
     abstract fun bindWeightedCardSelector(impl: EfraimidisSpirakisCardSelector): WeightedCardSelector
+
+    @Binds
+    @Singleton
+    abstract fun bindTransactionRunner(impl: RoomTransactionRunner): TransactionRunner
 }

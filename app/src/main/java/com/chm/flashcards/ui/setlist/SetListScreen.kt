@@ -1,6 +1,7 @@
 package com.chm.flashcards.ui.setlist
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,7 @@ import kotlin.uuid.Uuid
 @Composable
 fun SetListScreen(
     onSetClick: (Uuid) -> Unit,
+    onImportExportClick: () -> Unit,
     viewModel: SetListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -61,6 +63,7 @@ fun SetListScreen(
         onDeleteRequest = viewModel::onDeleteRequest,
         onDeleteConfirm = viewModel::onDeleteConfirm,
         onDeleteCancel = viewModel::onDeleteCancel,
+        onImportExportClick = onImportExportClick,
     )
 }
 
@@ -77,6 +80,7 @@ private fun SetListScreen(
     onDeleteRequest: (Uuid) -> Unit,
     onDeleteConfirm: (Uuid) -> Unit,
     onDeleteCancel: () -> Unit,
+    onImportExportClick: () -> Unit,
 ) {
     Scaffold(
         floatingActionButton = {
@@ -88,20 +92,33 @@ private fun SetListScreen(
             }
         },
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            if (uiState.sets.isEmpty()) {
-                Text("No sets yet", modifier = Modifier.align(Alignment.Center))
-            } else {
-                SetListContent(
-                    sets = uiState.sets,
-                    onSetClick = onSetClick,
-                    onRename = onRename,
-                    onDeleteRequest = onDeleteRequest,
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(
+                    onClick = onImportExportClick,
+                    modifier = Modifier.testTag("importExportButton"),
+                ) {
+                    Text("Import / Export")
+                }
+            }
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (uiState.sets.isEmpty()) {
+                    Text("No sets yet", modifier = Modifier.align(Alignment.Center))
+                } else {
+                    SetListContent(
+                        sets = uiState.sets,
+                        onSetClick = onSetClick,
+                        onRename = onRename,
+                        onDeleteRequest = onDeleteRequest,
+                    )
+                }
             }
         }
     }
@@ -279,6 +296,7 @@ private fun SetListScreenPopulatedPreview() {
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
+            onImportExportClick = {},
         )
     }
 }
@@ -298,6 +316,7 @@ private fun SetListScreenEmptyPreview() {
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteCancel = {},
+            onImportExportClick = {},
         )
     }
 }
