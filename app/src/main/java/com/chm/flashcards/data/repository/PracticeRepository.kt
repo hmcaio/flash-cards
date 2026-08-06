@@ -17,9 +17,14 @@ import kotlinx.coroutines.flow.Flow
  * F06 additions: [getSessionsForSet] backs History List, [getSessionDetail]
  * backs History Detail (reusing the same [PracticeSessionSummary] shape
  * [completeSession] already returns, per spec.md).
+ *
+ * C002 addition: [startSession]'s `tagIds` narrows the card pool to cards
+ * carrying ANY of the given tags (OR semantics) before weighted selection --
+ * defaults to empty, which keeps the pre-existing "every card in the set is
+ * eligible" behavior unchanged for callers that don't pass it.
  */
 interface PracticeRepository {
-    suspend fun startSession(setId: Uuid, cardCount: Int): PracticeSessionDraft
+    suspend fun startSession(setId: Uuid, cardCount: Int, tagIds: Set<Uuid> = emptySet()): PracticeSessionDraft
     suspend fun completeSession(draft: PracticeSessionDraft, answers: List<CardAnswer>): PracticeSessionSummary
 
     /** Sessions for [setId], newest first, each with its derived score -- see [PracticeSessionListItem]. */

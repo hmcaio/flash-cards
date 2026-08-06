@@ -114,3 +114,11 @@ singleton just to pass this list).
   doc's vaguer "shared session-scoped ViewModel" suggestion — a
   `@HiltViewModel` can't inject another `@HiltViewModel`, so a plain
   retained-scope holder class fills that role instead.
+- Chore C002 later added an optional multi-tag OR-filter to Session Config
+  (a chip row above the card-count slider, reusing F04's `FilterChip`
+  pattern but multi-select): selecting one or more tags narrows the
+  slider's range/"N of M cards" text and the card pool passed into
+  `PracticeRepository.startSession`/`WeightedCardSelector` to only cards
+  carrying at least one selected tag, before weighted selection runs. No
+  tags selected keeps the original "every card in the set is eligible"
+  behavior.

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Session Config tag filter (C002): optional multi-select, OR-semantics tag
+  filter chip row on Session Config, narrowing which cards
+  `WeightedCardSelector` can pick for a practice session.
+
 ## [1.0.0] - 2026-08-04
 
 ### Added
