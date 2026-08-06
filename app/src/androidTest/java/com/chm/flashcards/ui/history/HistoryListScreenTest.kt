@@ -63,9 +63,9 @@ class HistoryListScreenTest {
         composeRule.onNodeWithTag("correctButton").performClick()
         composeRule.onNodeWithText("1/1 correct").assertIsDisplayed()
 
-        // Back to Set Detail: Session Results -> Session Play -> Session Config -> Set Detail.
-        Espresso.pressBack()
-        Espresso.pressBack()
+        // Back to Set Detail: a single pop, since C001 collapses the Session
+        // Config/Play sub-stack via popUpTo when Session Results is reached, so
+        // system back goes straight from Session Results to Set Detail.
         Espresso.pressBack()
 
         // History List: the just-finished session shows up with its score.

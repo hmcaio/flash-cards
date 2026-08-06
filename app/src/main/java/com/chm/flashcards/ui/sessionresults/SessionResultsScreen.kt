@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -27,16 +28,17 @@ import kotlin.uuid.Uuid
  */
 @Composable
 fun SessionResultsScreen(
+    onNavigateBack: () -> Unit,
     viewModel: SessionResultsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    SessionResultsScreen(uiState = uiState)
+    SessionResultsScreen(uiState = uiState, onNavigateBack = onNavigateBack)
 }
 
 /** Stateless content, hoisted out of the [hiltViewModel]-backed overload above so it's previewable. */
 @Composable
-private fun SessionResultsScreen(uiState: SessionResultsUiState) {
+private fun SessionResultsScreen(uiState: SessionResultsUiState, onNavigateBack: () -> Unit) {
     val total = uiState.correct.size + uiState.incorrect.size
     Scaffold { innerPadding ->
         Column(
@@ -50,6 +52,9 @@ private fun SessionResultsScreen(uiState: SessionResultsUiState) {
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.testTag("scoreSummaryText"),
             )
+            TextButton(onClick = onNavigateBack, modifier = Modifier.testTag("backToSetButton")) {
+                Text("Back to Set")
+            }
             SessionOutcomeView(
                 correct = uiState.correct,
                 incorrect = uiState.incorrect,
@@ -78,6 +83,7 @@ private fun SessionResultsScreenMixedPreview() {
                 correct = listOf(previewCard("What is a data class?"), previewCard("What is Compose?")),
                 incorrect = listOf(previewCard("What is a sealed class?")),
             ),
+            onNavigateBack = {},
         )
     }
 }
@@ -91,6 +97,7 @@ private fun SessionResultsScreenAllCorrectPreview() {
                 correct = listOf(previewCard("What is a data class?"), previewCard("What is Compose?")),
                 incorrect = emptyList(),
             ),
+            onNavigateBack = {},
         )
     }
 }
@@ -104,6 +111,7 @@ private fun SessionResultsScreenAllIncorrectPreview() {
                 correct = emptyList(),
                 incorrect = listOf(previewCard("What is a sealed class?")),
             ),
+            onNavigateBack = {},
         )
     }
 }
