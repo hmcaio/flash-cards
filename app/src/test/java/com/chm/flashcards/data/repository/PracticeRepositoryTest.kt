@@ -7,6 +7,7 @@ import com.chm.flashcards.data.dao.PracticeSessionListItem
 import com.chm.flashcards.data.dao.PracticeSessionResultWithCard
 import com.chm.flashcards.data.entity.CardEntity
 import com.chm.flashcards.data.entity.PracticeSessionResultEntity
+import com.chm.flashcards.ui.cardeditor.FakeCardRepository
 import java.time.Instant
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.test.runTest
@@ -18,6 +19,7 @@ import org.junit.Test
 class PracticeRepositoryTest {
 
     private lateinit var fakeCardDao: FakeCardDao
+    private lateinit var fakeCardRepository: FakeCardRepository
     private lateinit var fakePracticeSessionDao: FakePracticeSessionDao
     private lateinit var fakeSelector: FakeWeightedCardSelector
     private lateinit var fakeIdGenerator: FakeIdGenerator
@@ -37,15 +39,20 @@ class PracticeRepositoryTest {
         timesIncorrect = timesIncorrect,
     )
 
+    /** [CardRepository.getCardsBySetId] row for [card], optionally tagged -- what [PracticeRepositoryImpl.startSession] reads from since C002. */
+    private fun cardWithTags(card: CardEntity, tags: List<Tag> = emptyList()) = CardWithTags(card.toDomain(), tags)
+
     @Before
     fun setUp() {
         fakeCardDao = FakeCardDao()
+        fakeCardRepository = FakeCardRepository()
         fakePracticeSessionDao = FakePracticeSessionDao()
         fakeSelector = FakeWeightedCardSelector()
         fakeIdGenerator = FakeIdGenerator(ids = listOf(sessionId, Uuid.parse("00000000-0000-0000-0000-0000000000bb")))
         fakeTimeProvider = FakeTimeProvider(Instant.parse("2026-01-01T00:00:00Z"))
         repository = PracticeRepositoryImpl(
             cardDao = fakeCardDao,
+            cardRepository = fakeCardRepository,
             practiceSessionDao = fakePracticeSessionDao,
             weightedCardSelector = fakeSelector,
             idGenerator = fakeIdGenerator,
@@ -57,8 +64,7 @@ class PracticeRepositoryTest {
     fun startSession_selectsCardsViaSelector_returnsDraftWithGeneratedId() = runTest {
         val card1 = cardEntity("Q1")
         val card2 = cardEntity("Q2")
-        fakeCardDao.insert(card1)
-        fakeCardDao.insert(card2)
+        fakeCardRepository.cardsBySetId.value = listOf(cardWithTags(card1), cardWithTags(card2))
 
         val draft = repository.startSession(setId, cardCount = 1)
 
@@ -73,13 +79,69 @@ class PracticeRepositoryTest {
 
     @Test
     fun startSession_doesNotWriteAnythingToDb() = runTest {
-        fakeCardDao.insert(cardEntity("Q1"))
+        fakeCardRepository.cardsBySetId.value = listOf(cardWithTags(cardEntity("Q1")))
 
         repository.startSession(setId, cardCount = 1)
 
         assertTrue(fakePracticeSessionDao.sessions.isEmpty())
         assertTrue(fakePracticeSessionDao.results.value.isEmpty())
-        assertTrue(fakeCardDao.inserted.size == 1) // only the seed insert from the test itself
+        assertTrue(fakeCardDao.inserted.isEmpty())
+    }
+
+    // --- C002: tag filter -----------------------------------------------------
+
+    @Test
+    fun startSession_withTagIds_onlyPassesMatchingCardsToSelector() = runTest {
+        val kotlinTag = Tag(Uuid.random(), "Kotlin")
+        val composeTag = Tag(Uuid.random(), "Compose")
+        val card1 = cardEntity("Q1")
+        val card2 = cardEntity("Q2")
+        fakeCardRepository.cardsBySetId.value = listOf(
+            cardWithTags(card1, listOf(kotlinTag)),
+            cardWithTags(card2, listOf(composeTag)),
+        )
+
+        repository.startSession(setId, cardCount = 5, tagIds = setOf(kotlinTag.id))
+
+        assertEquals(1, fakeSelector.selectCalls.size)
+        val (cardsSeenBySelector, _) = fakeSelector.selectCalls.single()
+        assertEquals(listOf(card1.id), cardsSeenBySelector.map { it.id })
+    }
+
+    @Test
+    fun startSession_withMultipleTagIds_usesOrSemantics() = runTest {
+        val kotlinTag = Tag(Uuid.random(), "Kotlin")
+        val composeTag = Tag(Uuid.random(), "Compose")
+        val otherTag = Tag(Uuid.random(), "Other")
+        val card1 = cardEntity("Q1")
+        val card2 = cardEntity("Q2")
+        val card3 = cardEntity("Q3")
+        fakeCardRepository.cardsBySetId.value = listOf(
+            cardWithTags(card1, listOf(kotlinTag)),
+            cardWithTags(card2, listOf(composeTag)),
+            cardWithTags(card3, listOf(otherTag)),
+        )
+
+        repository.startSession(setId, cardCount = 5, tagIds = setOf(kotlinTag.id, composeTag.id))
+
+        val (cardsSeenBySelector, _) = fakeSelector.selectCalls.single()
+        assertEquals(setOf(card1.id, card2.id), cardsSeenBySelector.map { it.id }.toSet())
+    }
+
+    @Test
+    fun startSession_withEmptyTagIds_passesEveryCardToSelector_defaultBehaviorUnchanged() = runTest {
+        val kotlinTag = Tag(Uuid.random(), "Kotlin")
+        val card1 = cardEntity("Q1")
+        val card2 = cardEntity("Q2")
+        fakeCardRepository.cardsBySetId.value = listOf(
+            cardWithTags(card1, listOf(kotlinTag)),
+            cardWithTags(card2), // untagged
+        )
+
+        repository.startSession(setId, cardCount = 5, tagIds = emptySet())
+
+        val (cardsSeenBySelector, _) = fakeSelector.selectCalls.single()
+        assertEquals(setOf(card1.id, card2.id), cardsSeenBySelector.map { it.id }.toSet())
     }
 
     @Test

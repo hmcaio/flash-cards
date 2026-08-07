@@ -17,15 +17,25 @@ import kotlinx.coroutines.flow.map
 
 class PracticeRepositoryImpl @Inject constructor(
     private val cardDao: CardDao,
+    private val cardRepository: CardRepository,
     private val practiceSessionDao: PracticeSessionDao,
     private val weightedCardSelector: WeightedCardSelector,
     private val idGenerator: IdGenerator,
     private val timeProvider: TimeProvider,
 ) : PracticeRepository {
 
-    override suspend fun startSession(setId: Uuid, cardCount: Int): PracticeSessionDraft {
-        val cards = cardDao.getBySetId(setId).first().map { it.toDomain() }
-        val selected = weightedCardSelector.select(cards, cardCount)
+    /**
+     * C002: fetches via [CardRepository.getCardsBySetId] (not raw [cardDao])
+     * specifically so each card's tags are available to filter by --
+     * `tagIds.isEmpty()` short-circuits to "no filter", the pre-existing
+     * behavior. The selector only ever sees cards that survive this filter,
+     * so a card outside the active tag selection can never be chosen.
+     */
+    override suspend fun startSession(setId: Uuid, cardCount: Int, tagIds: Set<Uuid>): PracticeSessionDraft {
+        val eligibleCards = cardRepository.getCardsBySetId(setId).first()
+            .filter { cardWithTags -> tagIds.isEmpty() || cardWithTags.tags.any { it.id in tagIds } }
+            .map { it.card }
+        val selected = weightedCardSelector.select(eligibleCards, cardCount)
         return PracticeSessionDraft(
             id = idGenerator.newId(),
             setId = setId,
