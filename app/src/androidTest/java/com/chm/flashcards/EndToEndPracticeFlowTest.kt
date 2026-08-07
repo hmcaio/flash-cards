@@ -8,10 +8,20 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
+import com.chm.flashcards.common.IdGenerator
+import com.chm.flashcards.common.TimeProvider
+import com.chm.flashcards.data.dao.CardDao
 import com.chm.flashcards.data.dao.CardSetDao
+import com.chm.flashcards.data.dao.CardTagCrossRefDao
+import com.chm.flashcards.data.dao.TagDao
+import com.chm.flashcards.data.entity.CardEntity
+import com.chm.flashcards.data.entity.CardSetEntity
+import com.chm.flashcards.data.entity.CardTagCrossRef
+import com.chm.flashcards.data.entity.TagEntity
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import javax.inject.Inject
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -43,6 +53,21 @@ class EndToEndPracticeFlowTest {
 
     @Inject
     lateinit var cardSetDao: CardSetDao
+
+    @Inject
+    lateinit var cardDao: CardDao
+
+    @Inject
+    lateinit var tagDao: TagDao
+
+    @Inject
+    lateinit var crossRefDao: CardTagCrossRefDao
+
+    @Inject
+    lateinit var idGenerator: IdGenerator
+
+    @Inject
+    lateinit var timeProvider: TimeProvider
 
     @Before
     fun init() {
@@ -115,5 +140,74 @@ class EndToEndPracticeFlowTest {
         composeRule.onNodeWithTag("flipCard").performClick()
         composeRule.onNodeWithText("A class that auto-generates equals/hashCode/toString/copy").assertIsDisplayed()
         composeRule.onNodeWithTag("correctButton").performClick()
+    }
+
+    /**
+     * C002 end-to-end acceptance test: a set with one tagged and one untagged
+     * card -- selecting the tag's filter chip on Session Config must narrow
+     * the count/slider to the single matching card, and the resulting session
+     * (Play + Results) must never surface the untagged card. This is the
+     * proof that the filter reaches all the way down to
+     * `WeightedCardSelector`, not just that the UI compiles -- seeding data
+     * directly via the injected DAOs (same precedent as
+     * `ui/setdetail/SetDetailScreenTest.kt`) so the tag id is known upfront
+     * for the `tagFilterChip_$tagId` test tag.
+     */
+    @Test
+    fun tagFilterOnSessionConfig_narrowsSessionToOnlyTaggedCard() {
+        lateinit var kotlinTagId: Uuid
+        runBlocking {
+            val set = CardSetEntity(id = idGenerator.newId(), name = "Tagged Set", createdAt = timeProvider.now())
+            cardSetDao.insert(set)
+
+            val taggedCardId = idGenerator.newId()
+            cardDao.insert(
+                CardEntity(
+                    id = taggedCardId,
+                    setId = set.id,
+                    front = "Tagged card front",
+                    back = "Tagged card back",
+                    notes = null,
+                ),
+            )
+            cardDao.insert(
+                CardEntity(
+                    id = idGenerator.newId(),
+                    setId = set.id,
+                    front = "Untagged card front",
+                    back = "Untagged card back",
+                    notes = null,
+                ),
+            )
+
+            kotlinTagId = idGenerator.newId()
+            tagDao.insert(TagEntity(id = kotlinTagId, name = "Kotlin"))
+            crossRefDao.insert(CardTagCrossRef(cardId = taggedCardId, tagId = kotlinTagId))
+        }
+
+        composeRule.onNodeWithText("Tagged Set").performClick()
+        composeRule.onNodeWithTag("startPracticeButton").performClick()
+
+        // Before filtering, both cards in the set are eligible.
+        composeRule.onNodeWithText("2 of 2 cards").assertIsDisplayed()
+
+        // Select the "Kotlin" tag filter chip -- narrows the pool to the one tagged card.
+        composeRule.onNodeWithTag("tagFilterChip_$kotlinTagId").performClick()
+        composeRule.onNodeWithText("1 of 1 cards").assertIsDisplayed()
+
+        composeRule.onNodeWithTag("startSessionButton").performClick()
+
+        // Session Play: only the tagged card ever appears.
+        composeRule.onNodeWithText("1/1").assertIsDisplayed()
+        composeRule.onNodeWithText("Tagged card front").assertIsDisplayed()
+        composeRule.onNodeWithText("Untagged card front").assertDoesNotExist()
+        composeRule.onNodeWithTag("flipCard").performClick()
+        composeRule.onNodeWithText("Tagged card back").assertIsDisplayed()
+        composeRule.onNodeWithTag("correctButton").performClick()
+
+        // Session Results: only the tagged card is listed -- the untagged card never reached the selector.
+        composeRule.onNodeWithText("1/1 correct").assertIsDisplayed()
+        composeRule.onNodeWithText("Tagged card front").assertIsDisplayed()
+        composeRule.onNodeWithText("Untagged card front").assertDoesNotExist()
     }
 }

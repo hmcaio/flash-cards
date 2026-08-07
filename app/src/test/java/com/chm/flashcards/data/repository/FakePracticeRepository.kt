@@ -21,7 +21,7 @@ class FakePracticeRepository : PracticeRepository {
         requestedCardCount = 0,
         cards = emptyList(),
     )
-    val startSessionCalls = mutableListOf<Pair<Uuid, Int>>()
+    val startSessionCalls = mutableListOf<StartSessionCall>()
 
     var completeSessionResult: PracticeSessionSummary = PracticeSessionSummary(
         sessionId = Uuid.parse("00000000-0000-0000-0000-0000000000ff"),
@@ -30,10 +30,13 @@ class FakePracticeRepository : PracticeRepository {
     )
     val completeSessionCalls = mutableListOf<Pair<PracticeSessionDraft, List<CardAnswer>>>()
 
-    override suspend fun startSession(setId: Uuid, cardCount: Int): PracticeSessionDraft {
-        startSessionCalls += setId to cardCount
+    override suspend fun startSession(setId: Uuid, cardCount: Int, tagIds: Set<Uuid>): PracticeSessionDraft {
+        startSessionCalls += StartSessionCall(setId, cardCount, tagIds)
         return startSessionResult
     }
+
+    /** C002: `tagIds` recorded alongside `setId`/`cardCount` so callers can assert the tag filter was passed through. */
+    data class StartSessionCall(val setId: Uuid, val cardCount: Int, val tagIds: Set<Uuid>)
 
     override suspend fun completeSession(draft: PracticeSessionDraft, answers: List<CardAnswer>): PracticeSessionSummary {
         completeSessionCalls += draft to answers
