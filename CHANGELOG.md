@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-07
+
 ### Added
 - Session Config tag filter (C002): optional multi-select, OR-semantics tag
   filter chip row on Session Config, narrowing which cards
@@ -44,5 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   picker, with schema/size/content validation and a Replace-all vs.
   Add-as-new-sets choice, reached from a new "Import / Export" button on Set List.
 
-[Unreleased]: https://github.com/hmcaio/flash-cards/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/hmcaio/flash-cards/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/hmcaio/flash-cards/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/hmcaio/flash-cards/compare/a51d4f1...v1.0.0
