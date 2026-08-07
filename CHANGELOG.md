@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   filter chip row on Session Config, narrowing which cards
   `WeightedCardSelector` can pick for a practice session.
 
+### Changed
+- Session Results back navigation (C001): a "Back to Set" button and the
+  system back gesture both now land directly on Set Detail instead of back
+  on Session Play/Config, by collapsing that sub-stack with `popUpTo` when
+  navigating to Session Results.
+
 ## [1.0.0] - 2026-08-04
 
 ### Added

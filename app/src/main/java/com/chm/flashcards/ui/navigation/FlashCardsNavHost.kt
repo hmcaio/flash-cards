@@ -84,7 +84,12 @@ fun FlashCardsNavHost(
         ) {
             SessionPlayScreen(
                 onSessionComplete = { sessionId ->
-                    navController.navigate(Screen.SessionResults.createRoute(sessionId.toString()))
+                    navController.navigate(Screen.SessionResults.createRoute(sessionId.toString())) {
+                        // Collapse the SessionConfig/SessionPlay sub-stack so a single pop
+                        // (system back or the Results screen's own back button) lands on
+                        // SetDetail, not back on the session the user just finished.
+                        popUpTo(Screen.SetDetail.route) { inclusive = false }
+                    }
                 },
             )
         }
@@ -92,7 +97,7 @@ fun FlashCardsNavHost(
             route = Screen.SessionResults.route,
             arguments = listOf(navArgument(Screen.ARG_SESSION_ID) { type = NavType.StringType }),
         ) {
-            SessionResultsScreen()
+            SessionResultsScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable(
             route = Screen.HistoryList.route,

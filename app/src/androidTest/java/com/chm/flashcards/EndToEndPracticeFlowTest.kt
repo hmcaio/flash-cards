@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso
 import com.chm.flashcards.common.IdGenerator
 import com.chm.flashcards.common.TimeProvider
 import com.chm.flashcards.data.dao.CardDao
@@ -33,6 +34,13 @@ import org.junit.Test
  * session on it, and land on the results screen showing the outcome. Also
  * covers the "Start Practice" disabled-until-a-card-exists edge case
  * (spec.md) along the way, since the set starts empty.
+ *
+ * C001 extends this: once Session Results is reached, both the screen's own
+ * "Back to Set" button (createSetAddCardRunSessionSeeResult) and the system
+ * back gesture (systemBackFromSessionResultsLandsOnSetDetail) must land
+ * directly on Set Detail -- not back on Session Play/Config -- because
+ * FlashCardsNavHost collapses that sub-stack via `popUpTo` when navigating
+ * to Results.
  */
 @HiltAndroidTest
 class EndToEndPracticeFlowTest {
@@ -69,6 +77,38 @@ class EndToEndPracticeFlowTest {
 
     @Test
     fun createSetAddCardRunSessionSeeResult() {
+        runSessionToResults()
+
+        // Session Results: 1/1 correct, the card listed under Correct.
+        composeRule.onNodeWithText("1/1 correct").assertIsDisplayed()
+        composeRule.onNodeWithText("What is a data class?").assertIsDisplayed()
+
+        // C001: tapping the screen's own "Back to Set" button is a single pop that lands
+        // directly on Set Detail (not Session Play/Config), thanks to the popUpTo collapse
+        // wired in FlashCardsNavHost when navigating to Session Results.
+        composeRule.onNodeWithTag("backToSetButton").performClick()
+        composeRule.onNodeWithTag("startPracticeButton").assertIsDisplayed()
+    }
+
+    @Test
+    fun systemBackFromSessionResultsLandsOnSetDetail() {
+        runSessionToResults()
+        composeRule.onNodeWithText("1/1 correct").assertIsDisplayed()
+
+        // C001: the hardware/system back gesture must also resolve to a single pop landing
+        // on Set Detail, not Session Play/Config -- this is what actually proves the
+        // popUpTo collapse works, as opposed to just the button's own popBackStack() call.
+        Espresso.pressBack()
+        composeRule.onNodeWithTag("startPracticeButton").assertIsDisplayed()
+    }
+
+    /**
+     * Shared setup for the two C001 tests above: create a set, add one card, run a
+     * one-card practice session, and land on Session Results. Duplicated verbatim from
+     * [createSetAddCardRunSessionSeeResult]'s original body so both tests exercise the
+     * exact same real path to Results before diverging on button-tap vs. system-back.
+     */
+    private fun runSessionToResults() {
         // Create a set.
         composeRule.onNodeWithTag("createSetFab").performClick()
         composeRule.onNodeWithTag("createSetNameField").performTextInput("Kotlin Basics")
@@ -100,10 +140,6 @@ class EndToEndPracticeFlowTest {
         composeRule.onNodeWithTag("flipCard").performClick()
         composeRule.onNodeWithText("A class that auto-generates equals/hashCode/toString/copy").assertIsDisplayed()
         composeRule.onNodeWithTag("correctButton").performClick()
-
-        // Session Results: 1/1 correct, the card listed under Correct.
-        composeRule.onNodeWithText("1/1 correct").assertIsDisplayed()
-        composeRule.onNodeWithText("What is a data class?").assertIsDisplayed()
     }
 
     /**
