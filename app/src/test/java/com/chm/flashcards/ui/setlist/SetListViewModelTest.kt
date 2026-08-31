@@ -1,7 +1,9 @@
 package com.chm.flashcards.ui.setlist
 
+import com.chm.flashcards.common.FakeViewModePreferences
 import com.chm.flashcards.common.MainDispatcherRule
 import com.chm.flashcards.data.dao.CardSetWithCount
+import com.chm.flashcards.data.preferences.ViewMode
 import java.time.Instant
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -20,12 +22,14 @@ class SetListViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var fakeRepository: FakeCardSetRepository
+    private lateinit var fakeViewModePreferences: FakeViewModePreferences
     private lateinit var viewModel: SetListViewModel
 
     @Before
     fun setUp() {
         fakeRepository = FakeCardSetRepository()
-        viewModel = SetListViewModel(fakeRepository)
+        fakeViewModePreferences = FakeViewModePreferences()
+        viewModel = SetListViewModel(fakeRepository, fakeViewModePreferences)
     }
 
     private fun cardSetWithCount(name: String, cardCount: Int = 0) = CardSetWithCount(
@@ -93,5 +97,40 @@ class SetListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(id to "New name"), fakeRepository.renameSetCalls)
+    }
+
+    @Test
+    fun initialState_loadsPersistedViewModeFromPreferences() = runTest {
+        val fakePreferences = FakeViewModePreferences(initial = ViewMode.LIST)
+        val vm = SetListViewModel(fakeRepository, fakePreferences)
+
+        advanceUntilIdle()
+
+        assertEquals(ViewMode.LIST, vm.uiState.value.viewMode)
+    }
+
+    @Test
+    fun onViewModeToggle_flipsListToGrid_andPersists() = runTest {
+        val fakePreferences = FakeViewModePreferences(initial = ViewMode.LIST)
+        val vm = SetListViewModel(fakeRepository, fakePreferences)
+        advanceUntilIdle()
+
+        vm.onViewModeToggle()
+        advanceUntilIdle()
+
+        assertEquals(ViewMode.GRID, vm.uiState.value.viewMode)
+        assertEquals(listOf(ViewMode.GRID), fakePreferences.setViewModeCalls)
+    }
+
+    @Test
+    fun onViewModeToggle_flipsGridToList_andPersists() = runTest {
+        // default fakeViewModePreferences starts at GRID
+        advanceUntilIdle()
+
+        viewModel.onViewModeToggle()
+        advanceUntilIdle()
+
+        assertEquals(ViewMode.LIST, viewModel.uiState.value.viewMode)
+        assertEquals(listOf(ViewMode.LIST), fakeViewModePreferences.setViewModeCalls)
     }
 }

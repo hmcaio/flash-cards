@@ -1,7 +1,9 @@
 package com.chm.flashcards.ui.setdetail
 
 import androidx.lifecycle.SavedStateHandle
+import com.chm.flashcards.common.FakeViewModePreferences
 import com.chm.flashcards.common.MainDispatcherRule
+import com.chm.flashcards.data.preferences.ViewMode
 import com.chm.flashcards.data.repository.Card
 import com.chm.flashcards.data.repository.CardWithTags
 import com.chm.flashcards.data.repository.Tag
@@ -24,6 +26,7 @@ class SetDetailViewModelTest {
 
     private lateinit var fakeCardRepository: FakeCardRepository
     private lateinit var fakeCardSetRepository: FakeCardSetRepository
+    private lateinit var fakeViewModePreferences: FakeViewModePreferences
     private lateinit var viewModel: SetDetailViewModel
 
     private val setId = Uuid.parse("00000000-0000-0000-0000-000000000001")
@@ -32,8 +35,14 @@ class SetDetailViewModelTest {
     fun setUp() {
         fakeCardRepository = FakeCardRepository()
         fakeCardSetRepository = FakeCardSetRepository()
+        fakeViewModePreferences = FakeViewModePreferences()
         val savedStateHandle = SavedStateHandle(mapOf(Screen.ARG_SET_ID to setId.toString()))
-        viewModel = SetDetailViewModel(savedStateHandle, fakeCardRepository, fakeCardSetRepository)
+        viewModel = SetDetailViewModel(
+            savedStateHandle,
+            fakeCardRepository,
+            fakeCardSetRepository,
+            fakeViewModePreferences,
+        )
     }
 
     private fun cardWithTags(front: String) =
@@ -124,5 +133,42 @@ class SetDetailViewModelTest {
         advanceUntilIdle()
 
         assertEquals(setOf(tagA, tagB), viewModel.uiState.value.availableTagFilters.toSet())
+    }
+
+    @Test
+    fun initialState_loadsPersistedViewModeFromPreferences() = runTest {
+        val fakePreferences = FakeViewModePreferences(initial = ViewMode.LIST)
+        val savedStateHandle = SavedStateHandle(mapOf(Screen.ARG_SET_ID to setId.toString()))
+        val vm = SetDetailViewModel(savedStateHandle, fakeCardRepository, fakeCardSetRepository, fakePreferences)
+
+        advanceUntilIdle()
+
+        assertEquals(ViewMode.LIST, vm.uiState.value.viewMode)
+    }
+
+    @Test
+    fun onViewModeToggle_flipsGridToList_andPersists() = runTest {
+        // default fakeViewModePreferences starts at GRID
+        advanceUntilIdle()
+
+        viewModel.onViewModeToggle()
+        advanceUntilIdle()
+
+        assertEquals(ViewMode.LIST, viewModel.uiState.value.viewMode)
+        assertEquals(listOf(ViewMode.LIST), fakeViewModePreferences.setViewModeCalls)
+    }
+
+    @Test
+    fun onViewModeToggle_flipsListToGrid_andPersists() = runTest {
+        val fakePreferences = FakeViewModePreferences(initial = ViewMode.LIST)
+        val savedStateHandle = SavedStateHandle(mapOf(Screen.ARG_SET_ID to setId.toString()))
+        val vm = SetDetailViewModel(savedStateHandle, fakeCardRepository, fakeCardSetRepository, fakePreferences)
+        advanceUntilIdle()
+
+        vm.onViewModeToggle()
+        advanceUntilIdle()
+
+        assertEquals(ViewMode.GRID, vm.uiState.value.viewMode)
+        assertEquals(listOf(ViewMode.GRID), fakePreferences.setViewModeCalls)
     }
 }

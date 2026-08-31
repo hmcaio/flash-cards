@@ -2,6 +2,8 @@ package com.chm.flashcards.ui.setlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chm.flashcards.data.preferences.ViewMode
+import com.chm.flashcards.data.preferences.ViewModePreferences
 import com.chm.flashcards.data.repository.CardSetRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -20,6 +22,7 @@ private const val MAX_NAME_LENGTH = 100
 @HiltViewModel
 class SetListViewModel @Inject constructor(
     private val repository: CardSetRepository,
+    private val viewModePreferences: ViewModePreferences,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SetListUiState())
@@ -34,6 +37,16 @@ class SetListViewModel @Inject constructor(
                 _uiState.update { it.copy(sets = sets) }
             }
         }
+        viewModelScope.launch {
+            viewModePreferences.viewMode.collect { mode ->
+                _uiState.update { it.copy(viewMode = mode) }
+            }
+        }
+    }
+
+    fun onViewModeToggle() {
+        val newMode = if (_uiState.value.viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
+        viewModelScope.launch { viewModePreferences.setViewMode(newMode) }
     }
 
     fun onCreateClick() {
