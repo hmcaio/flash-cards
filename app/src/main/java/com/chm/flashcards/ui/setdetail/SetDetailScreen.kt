@@ -1,26 +1,35 @@
 package com.chm.flashcards.ui.setdetail
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -30,6 +39,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -37,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chm.flashcards.data.preferences.ViewMode
 import com.chm.flashcards.data.repository.Card
 import com.chm.flashcards.data.repository.CardWithTags
 import com.chm.flashcards.data.repository.Tag
@@ -50,6 +63,12 @@ import kotlin.uuid.Uuid
  * navigating to Session Config (still a placeholder until F05).
  * F04 adds a search text field + single-select tag filter chip row above
  * the card list, filtering it in place.
+ *
+ * C004: rows are now Material3 [Card]s, with a list/grid toggle (shared
+ * global preference, see [SetDetailViewModel]) and the per-row Delete action
+ * moved into a [DropdownMenu] behind a `MoreVert` icon button (there's no
+ * Rename action here -- cards are edited via the Card Editor, not renamed
+ * in place).
  */
 @Composable
 fun SetDetailScreen(
@@ -81,6 +100,7 @@ fun SetDetailScreen(
         onDeleteCancel = viewModel::onDeleteCancel,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onTagFilterSelect = viewModel::onTagFilterSelect,
+        onViewModeToggle = viewModel::onViewModeToggle,
     )
 }
 
@@ -97,6 +117,7 @@ private fun SetDetailScreen(
     onDeleteCancel: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onTagFilterSelect: (Uuid?) -> Unit,
+    onViewModeToggle: () -> Unit,
 ) {
     Scaffold(
         floatingActionButton = {
@@ -119,22 +140,28 @@ private fun SetDetailScreen(
                 modifier = Modifier.padding(16.dp),
             )
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Button(
-                    onClick = onStartPracticeClick,
-                    enabled = uiState.hasCards,
-                    modifier = Modifier.testTag("startPracticeButton"),
-                ) {
-                    Text("Start Practice")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = onStartPracticeClick,
+                        enabled = uiState.hasCards,
+                        modifier = Modifier.testTag("startPracticeButton"),
+                    ) {
+                        Text("Start Practice")
+                    }
+                    TextButton(
+                        onClick = onHistoryClick,
+                        modifier = Modifier.testTag("historyButton"),
+                    ) {
+                        Text("History")
+                    }
                 }
-                TextButton(
-                    onClick = onHistoryClick,
-                    modifier = Modifier.testTag("historyButton"),
-                ) {
-                    Text("History")
-                }
+                ViewModeToggleButton(viewMode = uiState.viewMode, onToggle = onViewModeToggle)
             }
             if (!uiState.hasCards) {
                 Text(
@@ -185,16 +212,12 @@ private fun SetDetailScreen(
                             .testTag("emptyCardsMessage"),
                     )
                 } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(uiState.cards, key = { it.card.id.toString() }) { cardWithTags ->
-                            CardRow(
-                                cardWithTags = cardWithTags,
-                                onClick = { onCardRowClick(cardWithTags.card.id) },
-                                onDeleteClick = { onDeleteRequest(cardWithTags.card.id) },
-                            )
-                            HorizontalDivider()
-                        }
-                    }
+                    CardListContent(
+                        cards = uiState.cards,
+                        viewMode = uiState.viewMode,
+                        onCardRowClick = onCardRowClick,
+                        onDeleteRequest = onDeleteRequest,
+                    )
                 }
             }
         }
@@ -209,33 +232,147 @@ private fun SetDetailScreen(
     }
 }
 
+/**
+ * Icon button toggling the shared [ViewMode] preference. Shows the icon for
+ * the mode a tap would switch *into*, per the common "target state" toggle
+ * convention (e.g. a grid icon while currently in list mode) -- same
+ * behavior as [com.chm.flashcards.ui.setlist.SetListScreen]'s toggle, since
+ * this is one global preference.
+ */
+@Composable
+private fun ViewModeToggleButton(viewMode: ViewMode, onToggle: () -> Unit) {
+    IconButton(onClick = onToggle, modifier = Modifier.testTag("viewModeToggle")) {
+        if (viewMode == ViewMode.GRID) {
+            Icon(imageVector = Icons.AutoMirrored.Filled.ViewList, contentDescription = "Switch to list view")
+        } else {
+            Icon(imageVector = Icons.Default.GridView, contentDescription = "Switch to grid view")
+        }
+    }
+}
+
+@Composable
+private fun CardListContent(
+    cards: List<CardWithTags>,
+    viewMode: ViewMode,
+    onCardRowClick: (Uuid) -> Unit,
+    onDeleteRequest: (Uuid) -> Unit,
+) {
+    when (viewMode) {
+        ViewMode.LIST -> LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(cards, key = { it.card.id.toString() }) { cardWithTags ->
+                CardRow(
+                    cardWithTags = cardWithTags,
+                    isGrid = false,
+                    onClick = { onCardRowClick(cardWithTags.card.id) },
+                    onDeleteClick = { onDeleteRequest(cardWithTags.card.id) },
+                )
+            }
+        }
+
+        ViewMode.GRID -> LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            gridItems(cards, key = { it.card.id.toString() }) { cardWithTags ->
+                CardRow(
+                    cardWithTags = cardWithTags,
+                    isGrid = true,
+                    onClick = { onCardRowClick(cardWithTags.card.id) },
+                    onDeleteClick = { onDeleteRequest(cardWithTags.card.id) },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Single card row/cell, shared by list and grid mode. `isGrid` switches
+ * between a full-width trailing-actions row (list) and a compact
+ * corner-actions layout suited to a narrower grid cell -- both expose the
+ * same tap-to-open and Delete dropdown action.
+ */
 @Composable
 private fun CardRow(
     cardWithTags: CardWithTags,
+    isGrid: Boolean,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
-    Row(
+    Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("cardRow_${cardWithTags.card.id}")
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .testTag("cardRow_${cardWithTags.card.id}"),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(cardWithTags.card.front, style = MaterialTheme.typography.bodyLarge)
-            if (cardWithTags.tags.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    cardWithTags.tags.forEach { tag -> TagBadge(tag.name) }
+        if (isGrid) {
+            Column(modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 4.dp, bottom = 12.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    CardActionsMenu(cardId = cardWithTags.card.id, onDeleteClick = onDeleteClick)
+                }
+                Text(cardWithTags.card.front, style = MaterialTheme.typography.bodyLarge)
+                if (cardWithTags.tags.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        cardWithTags.tags.forEach { tag -> TagBadge(tag.name) }
+                    }
                 }
             }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(cardWithTags.card.front, style = MaterialTheme.typography.bodyLarge)
+                    if (cardWithTags.tags.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            cardWithTags.tags.forEach { tag -> TagBadge(tag.name) }
+                        }
+                    }
+                }
+                CardActionsMenu(cardId = cardWithTags.card.id, onDeleteClick = onDeleteClick)
+            }
         }
-        TextButton(onClick = onDeleteClick, modifier = Modifier.testTag("deleteCardButton_${cardWithTags.card.id}")) {
-            Text("Delete")
+    }
+}
+
+/**
+ * A single-item dropdown ("Delete" only -- there's no Rename action for
+ * cards). Kept as the same `MoreVert` + [DropdownMenu] interaction pattern
+ * as [com.chm.flashcards.ui.setlist.SetListScreen]'s two-item menu, for UI
+ * consistency across both screens per this chore's intent, rather than a
+ * bare icon button that deletes directly.
+ */
+@Composable
+private fun CardActionsMenu(cardId: Uuid, onDeleteClick: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }, modifier = Modifier.testTag("cardMenuButton_$cardId")) {
+            Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Card actions")
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text("Delete") },
+                onClick = {
+                    expanded = false
+                    onDeleteClick()
+                },
+                modifier = Modifier.testTag("deleteMenuItem_$cardId"),
+            )
         }
     }
 }
@@ -285,9 +422,9 @@ private val previewCards = listOf(previewCardDataClass, previewCardCompose)
 /** Tags used by [previewCards] -- mirrors how [SetDetailViewModel] derives `availableTagFilters`. */
 private val previewTagFilters = previewCards.flatMap { it.tags }.distinctBy { it.id }
 
-@Preview(name = "Set Detail - populated", showBackground = true)
+@Preview(name = "Set Detail - grid (default)", showBackground = true)
 @Composable
-private fun SetDetailScreenPopulatedPreview() {
+private fun SetDetailScreenGridPreview() {
     FlashcardsTheme {
         SetDetailScreen(
             uiState = SetDetailUiState(
@@ -296,6 +433,7 @@ private fun SetDetailScreenPopulatedPreview() {
                 isLoading = false,
                 availableTagFilters = previewTagFilters,
                 hasCards = true,
+                viewMode = ViewMode.GRID,
             ),
             onAddCardClick = {},
             onCardRowClick = {},
@@ -306,6 +444,34 @@ private fun SetDetailScreenPopulatedPreview() {
             onDeleteCancel = {},
             onSearchQueryChange = {},
             onTagFilterSelect = {},
+            onViewModeToggle = {},
+        )
+    }
+}
+
+@Preview(name = "Set Detail - list", showBackground = true)
+@Composable
+private fun SetDetailScreenListPreview() {
+    FlashcardsTheme {
+        SetDetailScreen(
+            uiState = SetDetailUiState(
+                setName = "Kotlin Basics",
+                cards = previewCards,
+                isLoading = false,
+                availableTagFilters = previewTagFilters,
+                hasCards = true,
+                viewMode = ViewMode.LIST,
+            ),
+            onAddCardClick = {},
+            onCardRowClick = {},
+            onStartPracticeClick = {},
+            onHistoryClick = {},
+            onDeleteRequest = {},
+            onDeleteConfirm = {},
+            onDeleteCancel = {},
+            onSearchQueryChange = {},
+            onTagFilterSelect = {},
+            onViewModeToggle = {},
         )
     }
 }
@@ -325,6 +491,7 @@ private fun SetDetailScreenEmptyPreview() {
             onDeleteCancel = {},
             onSearchQueryChange = {},
             onTagFilterSelect = {},
+            onViewModeToggle = {},
         )
     }
 }
@@ -351,6 +518,7 @@ private fun SetDetailScreenSearchQueryPreview() {
             onDeleteCancel = {},
             onSearchQueryChange = {},
             onTagFilterSelect = {},
+            onViewModeToggle = {},
         )
     }
 }
@@ -377,6 +545,7 @@ private fun SetDetailScreenTagFilterSelectedPreview() {
             onDeleteCancel = {},
             onSearchQueryChange = {},
             onTagFilterSelect = {},
+            onViewModeToggle = {},
         )
     }
 }
@@ -403,6 +572,7 @@ private fun SetDetailScreenNoResultsPreview() {
             onDeleteCancel = {},
             onSearchQueryChange = {},
             onTagFilterSelect = {},
+            onViewModeToggle = {},
         )
     }
 }
@@ -411,7 +581,15 @@ private fun SetDetailScreenNoResultsPreview() {
 @Composable
 private fun CardRowPreview() {
     FlashcardsTheme {
-        CardRow(cardWithTags = previewCards[0], onClick = {}, onDeleteClick = {})
+        CardRow(cardWithTags = previewCards[0], isGrid = false, onClick = {}, onDeleteClick = {})
+    }
+}
+
+@Preview(name = "Card cell - grid", showBackground = true)
+@Composable
+private fun CardGridCellPreview() {
+    FlashcardsTheme {
+        CardRow(cardWithTags = previewCards[0], isGrid = true, onClick = {}, onDeleteClick = {})
     }
 }
 

@@ -3,6 +3,8 @@ package com.chm.flashcards.ui.setdetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chm.flashcards.data.preferences.ViewMode
+import com.chm.flashcards.data.preferences.ViewModePreferences
 import com.chm.flashcards.data.repository.CardRepository
 import com.chm.flashcards.data.repository.CardSetRepository
 import com.chm.flashcards.ui.navigation.Screen
@@ -32,6 +34,7 @@ class SetDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val cardRepository: CardRepository,
     private val cardSetRepository: CardSetRepository,
+    private val viewModePreferences: ViewModePreferences,
 ) : ViewModel() {
 
     private val setId: Uuid = Uuid.parse(checkNotNull(savedStateHandle[Screen.ARG_SET_ID]))
@@ -89,6 +92,16 @@ class SetDetailViewModel @Inject constructor(
                     _uiState.update { it.copy(cards = cards, isLoading = false) }
                 }
         }
+        viewModelScope.launch {
+            viewModePreferences.viewMode.collect { mode ->
+                _uiState.update { it.copy(viewMode = mode) }
+            }
+        }
+    }
+
+    fun onViewModeToggle() {
+        val newMode = if (_uiState.value.viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
+        viewModelScope.launch { viewModePreferences.setViewMode(newMode) }
     }
 
     fun onSearchQueryChange(text: String) {

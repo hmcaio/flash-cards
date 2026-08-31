@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Icon replacements (C003): the "+" FABs on Set List/Set Detail and the
   "Correct"/"Incorrect" text on Session Play now use Material icons
   (`Icons.Default.Add`/`Check`/`Close`) instead of text.
+- Set List/Set Detail card layout (C004): rows on both screens are now
+  Material3 `Card`s, with a list/grid toggle (grid is the new default) backed
+  by a single global, Jetpack DataStore Preferences-persisted preference
+  shared by both screens, and per-row Rename/Delete actions moved from
+  inline buttons into a `MoreVert` dropdown menu.
 
 ## [1.1.0] - 2026-08-07
 

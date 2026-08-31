@@ -1,5 +1,6 @@
 package com.chm.flashcards.ui.setdetail
 
+import com.chm.flashcards.data.preferences.ViewMode
 import com.chm.flashcards.data.repository.CardWithTags
 import com.chm.flashcards.data.repository.Tag
 import kotlin.uuid.Uuid
@@ -23,6 +24,11 @@ import kotlin.uuid.Uuid
  * (F05 spec.md edge case: Session Config shouldn't be reachable with no
  * cards to select from). Defaults `false` so the button doesn't flash
  * enabled before the first load completes.
+ *
+ * C004 addition: [viewMode] reflects the global, DataStore-backed
+ * list-vs-grid preference (shared with [com.chm.flashcards.ui.setlist.SetListUiState.viewMode],
+ * not a per-screen setting) -- defaults to [ViewMode.GRID] before the first
+ * persisted value loads, matching this chore's default.
  */
 data class SetDetailUiState(
     val setName: String = "",
@@ -33,4 +39,5 @@ data class SetDetailUiState(
     val selectedTagFilter: Uuid? = null,
     val availableTagFilters: List<Tag> = emptyList(),
     val hasCards: Boolean = false,
+    val viewMode: ViewMode = ViewMode.GRID,
 )
