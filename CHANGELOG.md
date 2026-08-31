@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Icon replacements (C003): the "+" FABs on Set List/Set Detail and the
+  "Correct"/"Incorrect" text on Session Play now use Material icons
+  (`Icons.Default.Add`/`Check`/`Close`) instead of text.
+
 ## [1.1.0] - 2026-08-07
 
 ### Added

@@ -3,6 +3,7 @@ package com.chm.flashcards
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -139,6 +140,11 @@ class EndToEndPracticeFlowTest {
         composeRule.onNodeWithText("What is a data class?").assertIsDisplayed()
         composeRule.onNodeWithTag("flipCard").performClick()
         composeRule.onNodeWithText("A class that auto-generates equals/hashCode/toString/copy").assertIsDisplayed()
+
+        // C003: Correct/Incorrect are icon buttons now -- confirm they still expose a
+        // meaningful contentDescription (not just relying on the testTag to find them).
+        composeRule.onNodeWithContentDescription("Incorrect").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Correct").assertIsDisplayed()
         composeRule.onNodeWithTag("correctButton").performClick()
     }
 

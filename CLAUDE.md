@@ -47,6 +47,8 @@ When implementing a feature, follow its `plan.md` steps in order rather than imp
 
 **Cross-feature utilities added after F01**: `data/TransactionRunner.kt` (+ `RoomTransactionRunner`/`FakeTransactionRunner`) wraps `RoomDatabase.withTransaction` behind an interface, the same fakeable-dependency pattern as `IdGenerator`/`TimeProvider`, for any repository that needs an atomic multi-row write (practice session recording, import). `common/CardValidationRules.kt` centralizes field-length/tag-count limits shared by `CardEditorViewModel` (manual entry) and `ImportValidator` (import) — add new shared validation constants here rather than duplicating magic numbers per call site.
 
+**Icons**: `androidx.compose.material:material-icons-core` is available (BOM-managed, added in C003) — use `Icons.Default.*` (e.g. `Icons.Default.Add`) for any icon a screen needs, with a real `contentDescription`, rather than re-adding a dependency or falling back to text/emoji.
+
 **Compose previews**: every screen and reusable component gets an `@Preview` (added during that feature's own Refactor step, per [docs/features/README.md](docs/features/README.md)). Screens backed by `hiltViewModel()` split into a public stateful entry point + a private stateless overload (`UiState` + plain lambdas) so the stateless one can be previewed — see `ui/setlist/SetListScreen.kt` (F02).
 
 **Testing structure**:
