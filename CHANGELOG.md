@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lock orientation to portrait (C005): `MainActivity` now declares
   `android:screenOrientation="portrait"` in `AndroidManifest.xml`, so the app
   no longer rotates to landscape.
+- Session Play layout (C006): the flashcard `Card` on Session Play is now
+  vertically centered in the space below the progress text, with the
+  Correct/Incorrect buttons (or the "Tap the card to flip" hint) anchored to
+  the bottom of the screen instead of trailing directly under the card. The
+  Correct/Incorrect buttons are now larger (72dp) with fixed green/red
+  colors, and backing out of an in-progress session (system back gesture)
+  now shows a "Leave session?" confirm dialog instead of silently
+  discarding the session.
 
 ## [1.1.0] - 2026-08-07
 
