@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   by a single global, Jetpack DataStore Preferences-persisted preference
   shared by both screens, and per-row Rename/Delete actions moved from
   inline buttons into a `MoreVert` dropdown menu.
+- Lock orientation to portrait (C005): `MainActivity` now declares
+  `android:screenOrientation="portrait"` in `AndroidManifest.xml`, so the app
+  no longer rotates to landscape.
 
 ## [1.1.0] - 2026-08-07
 
