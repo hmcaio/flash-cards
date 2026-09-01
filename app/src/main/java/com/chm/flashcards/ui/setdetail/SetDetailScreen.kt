@@ -26,7 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +52,7 @@ import com.chm.flashcards.data.preferences.ViewMode
 import com.chm.flashcards.data.repository.Card
 import com.chm.flashcards.data.repository.CardWithTags
 import com.chm.flashcards.data.repository.Tag
+import com.chm.flashcards.ui.components.TagFilterChipRow
 import com.chm.flashcards.ui.theme.FlashcardsTheme
 import kotlin.uuid.Uuid
 
@@ -183,24 +183,12 @@ private fun SetDetailScreen(
                     .testTag("searchQueryField"),
             )
             if (uiState.availableTagFilters.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp)
-                        .testTag("tagFilterChipRow"),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    uiState.availableTagFilters.forEach { tag ->
-                        val selected = uiState.selectedTagFilter == tag.id
-                        FilterChip(
-                            selected = selected,
-                            onClick = { onTagFilterSelect(if (selected) null else tag.id) },
-                            label = { Text(tag.name) },
-                            modifier = Modifier.testTag("tagFilterChip_${tag.id}"),
-                        )
-                    }
-                }
+                TagFilterChipRow(
+                    tags = uiState.availableTagFilters,
+                    isSelected = { it == uiState.selectedTagFilter },
+                    onToggle = { onTagFilterSelect(if (it == uiState.selectedTagFilter) null else it) },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.cards.isEmpty()) {
