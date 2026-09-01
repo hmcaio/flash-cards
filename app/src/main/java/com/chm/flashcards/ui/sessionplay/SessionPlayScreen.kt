@@ -1,32 +1,44 @@
 package com.chm.flashcards.ui.sessionplay
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chm.flashcards.R
 import com.chm.flashcards.ui.theme.FlashcardsTheme
 import kotlin.uuid.Uuid
 
@@ -39,6 +51,7 @@ import kotlin.uuid.Uuid
  */
 @Composable
 fun SessionPlayScreen(
+    onNavigateBack: () -> Unit,
     onSessionComplete: (Uuid) -> Unit,
     viewModel: SessionPlayViewModel = hiltViewModel(),
 ) {
@@ -52,6 +65,7 @@ fun SessionPlayScreen(
         uiState = uiState,
         onFlip = viewModel::onFlip,
         onAnswer = viewModel::onAnswer,
+        onNavigateBack = onNavigateBack,
     )
 }
 
@@ -61,7 +75,14 @@ private fun SessionPlayScreen(
     uiState: SessionPlayUiState,
     onFlip: () -> Unit,
     onAnswer: (Boolean) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
+    // Backing out mid-session discards it (nothing is persisted until Results, per F05 spec) --
+    // intercept both the system back gesture and any future explicit back affordance with a
+    // confirm dialog rather than silently losing the user's progress.
+    var showLeaveConfirm by remember { mutableStateOf(false) }
+    BackHandler { showLeaveConfirm = true }
+
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier
@@ -80,45 +101,68 @@ private fun SessionPlayScreen(
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.testTag("sessionProgressText"),
             )
-            Card(
-                shape = RoundedCornerShape(12.dp),
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-                    .clickable(onClick = onFlip)
-                    .testTag("flipCard"),
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Text(card.front, style = MaterialTheme.typography.headlineSmall)
-                    if (uiState.isFlipped) {
-                        Text(
-                            card.back,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(top = 16.dp),
-                        )
-                        card.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onFlip)
+                        .testTag("flipCard"),
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text(card.front, style = MaterialTheme.typography.headlineSmall)
+                        if (uiState.isFlipped) {
                             Text(
-                                notes,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(top = 8.dp),
+                                card.back,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(top = 16.dp),
                             )
+                            card.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                                Text(
+                                    notes,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
                         }
                     }
                 }
             }
             if (uiState.isFlipped) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                ) {
                     Button(
                         onClick = { onAnswer(false) },
-                        modifier = Modifier.testTag("incorrectButton"),
+                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.incorrect_red), contentColor = Color.White),
+                        modifier = Modifier
+                            .size(72.dp)
+                            .testTag("incorrectButton"),
                     ) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Incorrect")
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Incorrect",
+                            modifier = Modifier.size(36.dp),
+                        )
                     }
                     Button(
                         onClick = { onAnswer(true) },
-                        modifier = Modifier.testTag("correctButton"),
+                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.correct_green), contentColor = Color.White),
+                        modifier = Modifier
+                            .size(72.dp)
+                            .testTag("correctButton"),
                     ) {
-                        Icon(imageVector = Icons.Default.Check, contentDescription = "Correct")
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Correct",
+                            modifier = Modifier.size(36.dp),
+                        )
                     }
                 }
             } else {
@@ -130,6 +174,35 @@ private fun SessionPlayScreen(
             }
         }
     }
+
+    if (showLeaveConfirm) {
+        LeaveSessionDialog(
+            onConfirm = {
+                showLeaveConfirm = false
+                onNavigateBack()
+            },
+            onDismiss = { showLeaveConfirm = false },
+        )
+    }
+}
+
+@Composable
+private fun LeaveSessionDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Leave session?") },
+        text = { Text("Your progress in this session will be lost.") },
+        confirmButton = {
+            TextButton(onClick = onConfirm, modifier = Modifier.testTag("leaveSessionConfirmButton")) {
+                Text("Leave")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("leaveSessionCancelButton")) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 // --- Previews -------------------------------------------------------------
@@ -150,6 +223,7 @@ private fun SessionPlayScreenFrontPreview() {
             uiState = SessionPlayUiState(currentIndex = 2, totalCount = 10, currentCard = previewCard, isFlipped = false),
             onFlip = {},
             onAnswer = {},
+            onNavigateBack = {},
         )
     }
 }
@@ -162,6 +236,7 @@ private fun SessionPlayScreenFlippedPreview() {
             uiState = SessionPlayUiState(currentIndex = 2, totalCount = 10, currentCard = previewCard, isFlipped = true),
             onFlip = {},
             onAnswer = {},
+            onNavigateBack = {},
         )
     }
 }
@@ -174,6 +249,15 @@ private fun SessionPlayScreenNearEndPreview() {
             uiState = SessionPlayUiState(currentIndex = 9, totalCount = 10, currentCard = previewCard, isFlipped = false),
             onFlip = {},
             onAnswer = {},
+            onNavigateBack = {},
         )
+    }
+}
+
+@Preview(name = "Leave session confirm dialog", showBackground = true)
+@Composable
+private fun LeaveSessionDialogPreview() {
+    FlashcardsTheme {
+        LeaveSessionDialog(onConfirm = {}, onDismiss = {})
     }
 }

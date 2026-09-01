@@ -83,6 +83,7 @@ fun FlashCardsNavHost(
             arguments = listOf(navArgument(Screen.ARG_SET_ID) { type = NavType.StringType }),
         ) {
             SessionPlayScreen(
+                onNavigateBack = { navController.popBackStack() },
                 onSessionComplete = { sessionId ->
                     navController.navigate(Screen.SessionResults.createRoute(sessionId.toString())) {
                         // Collapse the SessionConfig/SessionPlay sub-stack so a single pop
