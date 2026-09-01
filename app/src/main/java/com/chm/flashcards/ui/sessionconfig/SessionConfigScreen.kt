@@ -1,15 +1,10 @@
 package com.chm.flashcards.ui.sessionconfig
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -24,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chm.flashcards.data.repository.Tag
+import com.chm.flashcards.ui.components.TagFilterChipRow
 import com.chm.flashcards.ui.theme.FlashcardsTheme
 import kotlin.uuid.Uuid
 
@@ -33,11 +29,12 @@ import kotlin.uuid.Uuid
  * the set has at least one card (spec.md "Start Practice" is disabled otherwise
  * on Set Detail), so there's no "0 cards" empty state here.
  *
- * C002 addition: an optional multi-select tag filter chip row (OR semantics,
- * same [FilterChip] visual pattern as Set Detail's F04 single-select row, see
- * `ui/setdetail/SetDetailScreen.kt`) above the slider. Selecting any tag
- * narrows `setSize`/`selectedCount` to the filtered pool; no tags selected
- * (the default) keeps every card in the set eligible, unchanged from before.
+ * C002 addition: an optional multi-select tag filter chip row (OR semantics),
+ * above the slider. Selecting any tag narrows `setSize`/`selectedCount` to the
+ * filtered pool; no tags selected (the default) keeps every card in the set
+ * eligible, unchanged from before. C008 extracted the chip row itself into
+ * the shared [TagFilterChipRow] composable, also used by Set Detail's
+ * single-select tag filter (`ui/setdetail/SetDetailScreen.kt`).
  */
 @Composable
 fun SessionConfigScreen(
@@ -75,24 +72,12 @@ private fun SessionConfigScreen(
         ) {
             Text("Practice session", style = MaterialTheme.typography.headlineSmall)
             if (uiState.availableTags.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(top = 16.dp)
-                        .testTag("tagFilterChipRow"),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    uiState.availableTags.forEach { tag ->
-                        val selected = tag.id in uiState.selectedTagIds
-                        FilterChip(
-                            selected = selected,
-                            onClick = { onTagToggle(tag.id) },
-                            label = { Text(tag.name) },
-                            modifier = Modifier.testTag("tagFilterChip_${tag.id}"),
-                        )
-                    }
-                }
+                TagFilterChipRow(
+                    tags = uiState.availableTags,
+                    isSelected = { it in uiState.selectedTagIds },
+                    onToggle = onTagToggle,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
             }
             Text(
                 "${uiState.selectedCount} of ${uiState.setSize} cards",

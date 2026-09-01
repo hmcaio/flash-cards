@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   colors, and backing out of an in-progress session (system back gesture)
   now shows a "Leave session?" confirm dialog instead of silently
   discarding the session.
+- Tag filter chip row refactor (C008): Set Detail's single-select and
+  Session Config's multi-select tag filter chip rows now share one
+  `TagFilterChipRow` composable (new `ui/components/` package) built on
+  `FlowRow`, so chips wrap onto multiple lines -- bounded to a max height with
+  its own internal vertical scroll -- instead of an unbounded single-line
+  horizontal scroll that broke down with many tags.
 
 ## [1.1.0] - 2026-08-07
 

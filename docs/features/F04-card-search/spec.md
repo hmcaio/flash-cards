@@ -74,3 +74,8 @@ debouncing would be premature optimization.
 `getCardsWithTagsBySetId` uses), not `Flow<List<CardEntity>>` as shown
 above — so results already carry each card's full tag list rather than
 needing a second join step in the repository.
+
+C008 extracted the tag filter chip row itself (originally a single-line,
+horizontally-scrolling `Row` here) into a shared `ui/components/TagFilterChipRow.kt`
+composable (`FlowRow`-based, wraps + bounded height with internal scroll for large
+tag counts), also used by Session Config's multi-select tag filter.
